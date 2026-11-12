@@ -76,11 +76,16 @@ aws s3 cp dist/favicon.svg "s3://$BUCKET/favicon.svg" \
   "${AWS_OPTS[@]}" \
   --cache-control "public, max-age=3600" --content-type "image/svg+xml"
 
+# OG 画像（ファイル名固定なのでキャッシュは短め。SNS のクローラが読む）
+aws s3 cp dist/og.png "s3://$BUCKET/og.png" \
+  "${AWS_OPTS[@]}" \
+  --cache-control "public, max-age=3600" --content-type "image/png"
+
 # ハッシュ付きのアセットは長期キャッシュ
 aws s3 sync dist "s3://$BUCKET" \
   "${AWS_OPTS[@]}" \
   --delete \
-  --exclude "index.html" --exclude "sw.js" --exclude "favicon.svg" \
+  --exclude "index.html" --exclude "sw.js" --exclude "favicon.svg" --exclude "og.png" \
   --cache-control "public, max-age=31536000, immutable"
 
 # ---- 4. キャッシュ無効化 ----

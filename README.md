@@ -220,6 +220,12 @@ DNS は `fmt.okamomedia.tokyo` を CloudFront の Distribution Domain Name に�
 （Route 53 なら A レコードのエイリアス）。`index.html` と `sw.js` はキャッシュ無効で配信し、
 更新時に `create-invalidation` を実行します。
 
+### SNS 用の画像（OG 画像）
+
+`public/og.png`（1200×630）は `npm run og` で生成します（`scripts/make-og.mjs`、
+開発時のみ使う `@napi-rs/canvas` と Noto Sans CJK JP で描画）。文章を変えたら再生成して
+デプロイしてください。`index.html` の `og:image` / `twitter:image` がこの画像を指します。
+
 ---
 
 ## 前提が変わったときの要注意事項

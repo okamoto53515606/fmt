@@ -11,6 +11,7 @@
     "preview": "vite preview --port 4173",
     "test": "node scripts/test-rules.mjs",
     "report": "node scripts/gen-report.mjs",
+    "og": "node scripts/make-og.mjs",
     "test:samples": "node scripts/check-samples.mjs && node scripts/gen-report.mjs --check",
     "check:samples": "node scripts/check-samples.mjs",
     "check:net": "node scripts/check-no-network.mjs"
