@@ -1,5 +1,7 @@
 # fmt
 
+[![fmt — 貼るだけでわかる、データの中身](public/og.png)](https://fmt.okamomedia.tokyo/)
+
 **貼るだけで「これ何？」がわかる、ブラウザ完結のデコード＆整形ツール。**
 
 公開: **https://fmt.okamomedia.tokyo/** ・ MIT License
