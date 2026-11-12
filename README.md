@@ -230,6 +230,22 @@ DNS は `fmt.okamomedia.tokyo` を CloudFront の Distribution Domain Name に�
 
 ---
 
+## 開発の裏側（LLM とのやりとりの生ログ）
+
+このアプリは、LLM と対話しながら作りました。そのやりとりを**ほぼ原文のまま**公開しています。
+
+- [`prompt_history/20261112_deepseek-v4.1-flash.txt`](prompt_history/20261112_deepseek-v4.1-flash.txt) — 約 3,900 行 / 168KB（最初の要件定義から、デプロイ・公開までの全記録）
+
+**伏せたもの**：AWS アカウント ID・IAM の一意 ID・ACM 証明書 ID・MFA シークレットの断片・
+メールの Message-ID・端末のホスト名・個人名。すべて `REDACTED` に置き換えています
+（ルールは [`scripts/mask-history.mjs`](scripts/mask-history.mjs)、`npm run check:history` で再検査できます）。
+それ以外は、設計の迷いも失敗も含めてそのままです。伏せ漏れを見つけたら教えてください。
+
+> 「AI は使っていません」は**解析処理**の話です。実行時はルールベースで、LLM も外部 API も呼びません。
+> 開発時に LLM を使ったことと、プロダクトが LLM に依存することは別、という区別です。
+
+---
+
 ## 前提が変わったときの要注意事項
 
 | 前提 | 崩れたときに効く箇所 |

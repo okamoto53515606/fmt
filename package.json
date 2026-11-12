@@ -12,6 +12,8 @@
     "test": "node scripts/test-rules.mjs",
     "report": "node scripts/gen-report.mjs",
     "og": "node scripts/make-og.mjs",
+    "mask:history": "node scripts/mask-history.mjs",
+    "check:history": "node scripts/mask-history.mjs --check",
     "test:samples": "node scripts/check-samples.mjs && node scripts/gen-report.mjs --check",
     "check:samples": "node scripts/check-samples.mjs",
     "check:net": "node scripts/check-no-network.mjs"
