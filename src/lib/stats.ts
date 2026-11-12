@@ -121,9 +121,9 @@ export async function buildStats(ctx: Ctx): Promise<StatItem[]> {
   const sha = await sha256Hex(bytes);
   if (sha)
     stats.push({
-      label: 'SHA-256（この入力の指紋）',
+      label: 'SHA-256（内容の照合値）',
       value: sha,
-      note: '同じ内容かどうかを確かめるための値です。「入力がハッシュ値かどうか」は、上の判定（ハッシュ値）で調べています',
+      note: '同じ内容かどうかを確かめる値（指紋のようなもの）です。本人確認のための「署名」ではありません。「入力がハッシュ値かどうか」は、上の判定（ハッシュ値）で調べています',
     });
 
   return stats;
