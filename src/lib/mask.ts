@@ -1,0 +1,173 @@
+import type { MaskCounts } from '../types.ts';
+
+/**
+ * 機密情報のマスキング。
+ * 誤検知が少ないパターンだけを対象にし、元の形が推測できる程度に残す
+ * （例: taro@gmail.com → t***@g***.com）。
+ */
+
+export const emptyCounts = (): MaskCounts => ({
+  emails: 0,
+  phones: 0,
+  keys: 0,
+  cards: 0,
+  mynumbers: 0,
+  addresses: 0,
+  ips: 0,
+  accounts: 0,
+});
+
+const stars = (n: number) => '*'.repeat(Math.max(3, Math.min(8, n)));
+
+function maskWord(w: string): string {
+  if (w.length <= 2) return `${w[0] ?? ''}*`;
+  return `${w[0]}${stars(w.length - 2)}${w[w.length - 1]}`;
+}
+
+/** Luhn チェック（クレジットカード番号の誤検知を減らす） */
+export function luhnOk(digits: string): boolean {
+  let sum = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = digits.charCodeAt(i) - 48;
+    if (n < 0 || n > 9) return false;
+    if (alt) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+
+/** マイナンバーのチェックディジット */
+export function myNumberOk(d: string): boolean {
+  if (d.length !== 12) return false;
+  let sum = 0;
+  for (let n = 1; n <= 11; n++) {
+    const p = Number(d[11 - n]);
+    sum += p * (n <= 6 ? n + 1 : n - 5);
+  }
+  const rem = sum % 11;
+  const check = rem <= 1 ? 0 : 11 - rem;
+  return check === Number(d[11]);
+}
+
+const KEY_PATTERNS: { name: string; re: RegExp }[] = [
+  { name: 'OpenAI APIキー', re: /\bsk-[A-Za-z0-9_-]{16,}\b/g },
+  { name: 'Anthropic APIキー', re: /\bsk-ant-[A-Za-z0-9_-]{16,}\b/g },
+  { name: 'AWS アクセスキー', re: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },
+  { name: 'Google APIキー', re: /\bAIza[0-9A-Za-z_-]{30,}\b/g },
+  { name: 'GitHub トークン', re: /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/g },
+  { name: 'Slack トークン', re: /\bxox[abposr]-[A-Za-z0-9-]{10,}\b/g },
+  { name: 'Stripe キー', re: /\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{16,}\b/g },
+  { name: '秘密鍵ブロック', re: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g },
+];
+
+export function maskText(input: string): { text: string; counts: MaskCounts; found: string[] } {
+  const counts = emptyCounts();
+  const found: string[] = [];
+  let text = input;
+
+  // 0. 2段階認証のシークレット（otpauth:// の secret=...）
+  text = text.replace(/\b(secret=)([A-Z2-7]{8,})/gi, (_m, prefix: string, secret: string) => {
+    counts.keys++;
+    found.push('2段階認証のシークレット');
+    return `${prefix}${secret.slice(0, 2)}${'*'.repeat(Math.max(4, secret.length - 4))}${secret.slice(-2)}`;
+  });
+
+  // 1. 秘密鍵ブロック（最優先で丸ごと）
+  text = text.replace(KEY_PATTERNS[KEY_PATTERNS.length - 1]!.re, () => {
+    counts.keys++;
+    found.push('秘密鍵ブロック');
+    return '-----BEGIN PRIVATE KEY-----\n（秘密鍵のため非表示）\n-----END PRIVATE KEY-----';
+  });
+
+  // 1.5 AWS アカウントID（ARN / 2段階認証のラベル / account の文脈）
+  const maskAccount = (id: string) => `********${id.slice(-4)}`;
+  text = text.replace(/\b(arn:aws[a-z-]*:[a-z0-9-]*:[a-z0-9-]*:)(\d{12})\b/g, (_m, prefix: string, id: string) => {
+    counts.accounts++;
+    found.push('AWS アカウントID');
+    return `${prefix}${maskAccount(id)}`;
+  });
+  text = text.replace(/\b([A-Za-z0-9._%+-]+)@(\d{12})\b/g, (_m, user: string, id: string) => {
+    counts.accounts++;
+    found.push('AWS アカウントID');
+    return `${user}@${maskAccount(id)}`;
+  });
+  text = text.replace(
+    /((?:account|アカウント)(?:[_ ]?(?:id|ID|Id|番号))?[\s:=「"]{0,6})(\d{12})\b/gi,
+    (_m, prefix: string, id: string) => {
+      counts.accounts++;
+      found.push('AWS アカウントID');
+      return `${prefix}${maskAccount(id)}`;
+    },
+  );
+
+  // 2. API キー
+  for (const p of KEY_PATTERNS.slice(0, -1)) {
+    text = text.replace(p.re, (m) => {
+      counts.keys++;
+      found.push(p.name);
+      const keep = Math.min(4, Math.floor(m.length / 4));
+      return `${m.slice(0, keep)}${'*'.repeat(Math.max(4, m.length - keep - 4))}${m.slice(-4)}`;
+    });
+  }
+
+  // 3. メールアドレス
+  text = text.replace(/\b([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g, (_m, local: string, domain: string) => {
+    counts.emails++;
+    const parts = domain.split('.');
+    const tld = parts.pop() ?? '';
+    const host = parts.join('.') || '';
+    const maskedHost = host ? `${host[0]}${stars(host.length)}` : '';
+    return `${maskWord(local)}@${maskedHost}${maskedHost ? '.' : ''}${tld}`;
+  });
+
+  // 4. クレジットカード（Luhn が通ったものだけ）
+  text = text.replace(/\b(?:\d[ -]?){12,18}\d\b/g, (m) => {
+    const digits = m.replace(/\D/g, '');
+    if (digits.length < 13 || digits.length > 19 || !luhnOk(digits)) return m;
+    counts.cards++;
+    return `${digits.slice(0, 4)}${'*'.repeat(digits.length - 8)}${digits.slice(-4)}`;
+  });
+
+  // 5. マイナンバー（12桁 + チェックディジット）
+  text = text.replace(/\b\d{12}\b/g, (m) => {
+    if (!myNumberOk(m)) return m;
+    counts.mynumbers++;
+    return `********${m.slice(-4)}`;
+  });
+
+  // 6. 電話番号（日本の固定・携帯・IP電話・+81）
+  text = text.replace(/(?:\+81[ -]?\d{1,4}[ -]?\d{1,4}[ -]?\d{3,4}|\b0\d{1,4}[- ]?\d{1,4}[- ]?\d{3,4}\b)/g, (m) => {
+    const digits = m.replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 13) return m;
+    counts.phones++;
+    let di = 0;
+    return m.replace(/\d/g, (d) => {
+      const keep = di < 2 || di >= digits.length - 2;
+      di++;
+      return keep ? d : '*';
+    });
+  });
+
+  // 7. 日本の住所（都道府県＋市区町村まで残し、番地以降を隠す）
+  text = text.replace(
+    /((?:北海道|東京都|京都府|大阪府|.{2,3}県)(?:[^\s、。]{1,12}?[市区町村]))([^\s、。]{0,24})/g,
+    (_m, head: string, rest: string) => {
+      if (!/[0-9０-９]/.test(rest)) return _m;
+      counts.addresses++;
+      return `${head}${'*'.repeat(Math.max(3, Math.min(10, rest.length)))}`;
+    },
+  );
+
+  // 8. IP アドレス（後半を隠す）
+  text = text.replace(/\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\b/g, (_m, a, b) => {
+    counts.ips++;
+    return `${a}.${b}.*.*`;
+  });
+
+  return { text, counts, found: [...new Set(found)] };
+}

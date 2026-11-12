@@ -1,0 +1,31 @@
+{
+  "name": "fmt",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "貼るだけで「これ何？」がわかる。ブラウザ完結のデコード＆整形ツール",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/gen-sw.mjs && node scripts/check-no-network.mjs",
+    "preview": "vite preview --port 4173",
+    "test": "node scripts/test-rules.mjs",
+    "report": "node scripts/gen-report.mjs",
+    "test:samples": "node scripts/check-samples.mjs && node scripts/gen-report.mjs --check",
+    "check:samples": "node scripts/check-samples.mjs",
+    "check:net": "node scripts/check-no-network.mjs"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^1.1.1",
+    "@types/node": "^26.6.6",
+    "qrcode": "^1.5.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  },
+  "dependencies": {
+    "@zxing/library": "^0.23.0",
+    "exifr": "^7.1.3",
+    "heic2any": "^0.0.4",
+    "marked": "^18.2.0"
+  }
+}

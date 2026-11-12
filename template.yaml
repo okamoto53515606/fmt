@@ -1,0 +1,234 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: fmt — ブラウザ完結のデコード＆整形ツール（S3 + CloudFront 静的配信）
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: ''
+    Description: 独自ドメイン（例 fmt.okamomedia.tokyo）。空なら CloudFront の既定ドメインを使う
+  AcmCertificateArn:
+    Type: String
+    Default: ''
+    Description: 独自ドメイン用の ACM 証明書 ARN（必ず us-east-1 で発行）
+
+Conditions:
+  HasDomain: !Not [!Equals [!Ref DomainName, '']]
+  HasCert: !Not [!Equals [!Ref AcmCertificateArn, '']]
+
+Resources:
+  # ===== S3（静的ファイルのみ。入力データは保存しない） =====
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'fmt-${AWS::AccountId}-${AWS::Region}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${SiteBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${SiteDistribution}'
+
+  SiteOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: fmt-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ===== セキュリティヘッダー（外部への通信を全面禁止） =====
+  SiteHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: fmt-security-headers
+        Comment: CSP の connect-src を none にして、外部への送信をブラウザ側で遮断する
+        SecurityHeadersConfig:
+          ContentSecurityPolicy:
+            Override: true
+            # script-src の wasm-unsafe-eval は HEIC 変換（libheif/WASM）のため
+            # worker-src / child-src の blob: は HEIC 変換ライブラリが作る Worker のため
+            ContentSecurityPolicy: >-
+              default-src 'none';
+              base-uri 'none';
+              object-src 'none';
+              frame-ancestors 'none';
+              form-action 'none';
+              script-src 'self' 'wasm-unsafe-eval' blob:;
+              style-src 'self' 'unsafe-inline';
+              img-src 'self' data: blob:;
+              font-src 'self';
+              worker-src 'self' blob:;
+              child-src 'self' blob:;
+              connect-src 'none';
+              manifest-src 'self'
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: no-referrer
+            Override: true
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()'
+              Override: true
+            - Header: Cross-Origin-Opener-Policy
+              Value: same-origin
+              Override: true
+
+  # ===== Service Worker 専用ヘッダー =====
+  # ページ側は connect-src 'none' のまま。SW は「同一オリジンのアセットを
+  # 事前キャッシュする」ために fetch する必要があるので、self だけ許可する。
+  ServiceWorkerHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: fmt-sw-security-headers
+        Comment: Service Worker が同一オリジンのアセットをキャッシュできるよう connect-src を self に限定
+        SecurityHeadersConfig:
+          ContentSecurityPolicy:
+            Override: true
+            ContentSecurityPolicy: >-
+              default-src 'none';
+              base-uri 'none';
+              object-src 'none';
+              frame-ancestors 'none';
+              form-action 'none';
+              script-src 'self';
+              style-src 'self';
+              img-src 'self';
+              font-src 'self';
+              worker-src 'self';
+              connect-src 'self'
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: no-referrer
+            Override: true
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+              Override: true
+
+  # ===== CloudFront =====
+  SiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: fmt static site
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_200
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !Ref SiteOAC
+            S3OriginConfig: {}
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD, OPTIONS]
+          # AWS マネージド: CachingOptimized
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          ResponseHeadersPolicyId: !Ref SiteHeadersPolicy
+        CacheBehaviors:
+          # 更新をすぐ反映するため、入口の HTML と Service Worker はキャッシュしない
+          - PathPattern: '/'
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            # AWS マネージド: CachingDisabled
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            ResponseHeadersPolicyId: !Ref SiteHeadersPolicy
+          - PathPattern: '/index.html'
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            ResponseHeadersPolicyId: !Ref SiteHeadersPolicy
+          - PathPattern: '/sw.js'
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            ResponseHeadersPolicyId: !Ref ServiceWorkerHeadersPolicy
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        Aliases: !If [HasDomain, [!Ref DomainName], !Ref 'AWS::NoValue']
+        ViewerCertificate: !If
+          - HasDomain
+          - AcmCertificateArn: !Ref AcmCertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+
+Outputs:
+  SiteUrl:
+    Description: 公開 URL
+    Value: !If
+      - HasDomain
+      - !Sub 'https://${DomainName}/'
+      - !Sub 'https://${SiteDistribution.DomainName}/'
+  DistributionDomainName:
+    Description: CloudFront のドメイン
+    Value: !GetAtt SiteDistribution.DomainName
+  DistributionId:
+    Description: CloudFront の Distribution ID（キャッシュ無効化に使用）
+    Value: !Ref SiteDistribution
+  BucketName:
+    Description: アップロード先の S3 バケット
+    Value: !Ref SiteBucket
