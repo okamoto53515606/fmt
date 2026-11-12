@@ -37,12 +37,14 @@ const CACHE = 'fmt-${hash}';
 const ASSETS = ${JSON.stringify(files, null, 2)};
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE)
-      .then((cache) => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting()),
-  );
+  // skipWaiting はしない。開いているタブが旧 SW のキャッシュを使い続けられるようにし、
+  // 「旧ページ + 新キャッシュ（古いチャンクは消えている）」という壊れ方を避ける。
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
+});
+
+// どうしても即時に切り替えたい場合だけ、ページ側から明示的に送る
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -50,6 +52,7 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      // 初回訪問でもオフラインにできるよう、制御下に置く（切り替えは skipWaiting 側で制御）
       .then(() => self.clients.claim()),
   );
 });
@@ -67,6 +70,11 @@ self.addEventListener('fetch', (event) => {
       return fetch(req)
         .then((res) => {
           if (!res || res.status !== 200 || res.type !== 'basic') return res;
+          // 消えたアセットは index.html（HTML）で返ることがある。
+          // それを JS/CSS としてキャッシュすると「Unexpected token '<'」になるため掴まない。
+          const isHtml = /text\/html/i.test(res.headers.get('content-type') || '');
+          const wantsHtml = req.mode === 'navigate' || /\.html?$/i.test(url.pathname);
+          if (isHtml && !wantsHtml) return res;
           const copy = res.clone();
           caches.open(CACHE).then((cache) => cache.put(req, copy));
           return res;

@@ -115,6 +115,7 @@ function run() {
     images: state.images.map(({ name, mime, originalMime, bytes }) => ({ name, mime, originalMime, bytes })),
     mask: state.mask,
     explain: state.explain,
+    truncated: big,
   };
   status.textContent = state.images.length ? '画像を解析しています…' : '解析しています…';
   worker.postMessage(req);

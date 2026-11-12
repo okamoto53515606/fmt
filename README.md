@@ -57,7 +57,7 @@
 
 | 項目 | 取扱い |
 |---|---|
-| 通信 | なし。CloudFront の CSP で `connect-src 'none'`（外部への送信を全面禁止） |
+| 通信 | fetch / XHR / WebSocket / beacon / EventSource による外部送信を CSP で禁止（残る抜け道は下の注記） |
 | 解析 | Web Worker 内で完結。画面が固まりにくい |
 | 保存 | しない。入力は再読み込みで消える（localStorage 等も使わない） |
 | オフライン | Service Worker が全アセットを事前キャッシュ。機内・閉域でも動く |
@@ -68,10 +68,21 @@
 | 配信 | S3 は非公開 + CloudFront OAC。S3 への直接アクセス不可 |
 
 `npm run build` は最後に **無通信の静的検査**（`scripts/check-no-network.mjs`）を実行し、
-WebSocket / sendBeacon / EventSource / XMLHttpRequest が含まれていたら失敗します。
+WebSocket / sendBeacon / EventSource / XMLHttpRequest、および**宛先がコードに直書きされた**
+fetch・`.src` 代入・Service Worker 登録・`node:http` の読み込みが見つかったら失敗します。
+
+ただしこれは正規表現による検査なので、`navigator['send' + 'Beacon']()` のような書き方までは追えません。
+**防御の本体は CSP、この検査は補助**（主要な送信 API の混入を見張るため）という位置づけです。
 
 > Service Worker（`/sw.js`）だけは、初回のオフライン用キャッシュ作成のために**同一オリジンへの fetch** を許可しています
 > （`connect-src 'self'`）。ページ本体は `connect-src 'none'` のままなので、入力が外部へ送られる経路はありません。
+
+> **残っている抜け道（正直に）**: `connect-src 'none'` が塞ぐのは fetch / XHR / WebSocket / beacon / EventSource です。
+> `location.href = 'https://…?' + 入力` のような**トップレベル遷移は CSP では止まりません**
+> （`navigate-to` は CSP3 で仕様から外れ、主要ブラウザは実装していません）。
+> このアプリは入力から URL を組み立てて遷移する処理を持たず、`form-action 'none'`（フォーム送信）と
+> `img-src 'self' data: blob:`（画像ピクセル）も塞いでいますが、**遷移そのものはブラウザの機能**なので、
+> 「外部にデータを出せる経路がゼロ」とまでは言えません。
 
 > 注意: 静的配信基盤には、通常の Web アクセスと同様に IP アドレスや User-Agent などの
 > **アクセスログ**が残る場合があります。入力した内容は含まれません。
@@ -172,7 +183,7 @@ export const myRule: ClassifierRule = {
 - JWT の署名検証、証明書の失効確認（CRL/OCSP）は行いません。
 - マスキングは取りこぼしがあります。共有前の目視確認をおすすめします。
 - HEIC はブラウザで表示できる形式に変換して解析します（元ファイルは変更しません）。
-- 入力の上限はテキスト 4MB / 画像 25MB・1枚です（超えた分は先頭のみ解析）。
+- 入力の上限はテキスト 4MB / 画像 25MB・1枚です（超えた分は先頭のみ解析し、結果にも注意書きを出します）。
 
 ---
 

@@ -78,7 +78,7 @@ Resources:
               object-src 'none';
               frame-ancestors 'none';
               form-action 'none';
-              script-src 'self' 'wasm-unsafe-eval' blob:;
+              script-src 'self' 'wasm-unsafe-eval';
               style-src 'self' 'unsafe-inline';
               img-src 'self' data: blob:;
               font-src 'self';
@@ -101,7 +101,7 @@ Resources:
         CustomHeadersConfig:
           Items:
             - Header: Permissions-Policy
-              Value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()'
+              Value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
               Override: true
             - Header: Cross-Origin-Opener-Policy
               Value: same-origin
@@ -201,13 +201,8 @@ Resources:
             CachedMethods: [GET, HEAD]
             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
             ResponseHeadersPolicyId: !Ref ServiceWorkerHeadersPolicy
-        CustomErrorResponses:
-          - ErrorCode: 403
-            ResponseCode: 200
-            ResponsePagePath: /index.html
-          - ErrorCode: 404
-            ResponseCode: 200
-            ResponsePagePath: /index.html
+        # 403/404 を index.html に置き換えない。
+        # SPA ではないので、消えた JS チャンクが「200 の HTML」で返る事故を避ける。
         Aliases: !If [HasDomain, [!Ref DomainName], !Ref 'AWS::NoValue']
         ViewerCertificate: !If
           - HasDomain

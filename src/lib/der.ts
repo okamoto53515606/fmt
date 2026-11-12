@@ -155,7 +155,7 @@ function parseIntTlv(b: Uint8Array, t: Tlv): bigint {
   return n;
 }
 
-function parseTime(b: Uint8Array, t: Tlv): Date {
+export function parseTime(b: Uint8Array, t: Tlv): Date {
   const s = decodeString(b, t);
   if (t.tag === 0x17) {
     // UTCTime: YYMMDDHHMMSSZ

@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 /**
- * 「通信しない」ことの機械的な検査。
+ * 「通信しない」ことの機械的な検査（補助）。
+ *
+ * 主たる防御は CloudFront の CSP（connect-src 'none'）で、これはその補助。
+ * 正規表現ベースなので `navigator['send' + 'Beacon']()` のような書き方には追随できず、
+ * 「主要な送信 API が混入していないか」をビルド時に見張るためのもの、という位置づけ。
  *
  * - 通信 API（WebSocket / sendBeacon / EventSource / XHR）が dist に無いこと
- * - fetch は件数を表示（CSP で外部は遮断されるが、目視確認できるようにする）
+ * - 宛先がコードに直書きされた送信（外部 URL への fetch / .src 代入 / SW 登録 / http モジュール読み込み）が無いこと
  * - index.html にインライン script が無いこと（CSP と矛盾しないように）
  * - index.html の参照が相対パスだけであること
  */
@@ -32,6 +36,12 @@ const FORBIDDEN = [
   ['sendBeacon', /\bsendBeacon\s*\(/g],
   ['EventSource', /\bnew\s+EventSource\s*\(/g],
   ['XMLHttpRequest', /\bnew\s+XMLHttpRequest\s*\(/g],
+  // ↓ 宛先がコードに直書きされている送信。CSP 以前に、そもそも書かない。
+  ['外部 URL への fetch', /\bfetch\s*\(\s*(['"`])(?:https?:)?\/\//g],
+  ['外部 URL への .src 代入', /\.src\s*=\s*(['"`])(?:https?:)?\/\//g],
+  ['外部 URL の Worker 生成', /\bnew\s+Worker\s*\(\s*(['"`])(?:https?:)?\/\//g],
+  ['外部 URL の SW 登録', /serviceWorker\s*\.\s*register\s*\(\s*(['"`])(?:https?:)?\/\//g],
+  ['http/https モジュールの読み込み', /\b(?:import|require)\s*\(\s*(['"`])node:https?\1\s*\)/g],
 ];
 
 for (const f of files) {
@@ -43,7 +53,7 @@ for (const f of files) {
     if (hits) problems.push(`${where}: ${name} が ${hits.length} 箇所あります`);
   }
   const fetches = text.match(/\bfetch\s*\(/g);
-  if (fetches) warnings.push(`${where}: fetch( が ${fetches.length} 箇所`);
+  if (fetches) warnings.push(`${where}: fetch( が ${fetches.length} 箇所（宛先は実行時に決まる。CSP の connect-src 'none' が防ぐ）`);
 }
 
 const html = readFileSync(join(distDir, 'index.html'), 'utf8');
@@ -68,4 +78,4 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log('[net] OK: WebSocket / sendBeacon / EventSource / XMLHttpRequest はありません');
+console.log('[net] OK: WebSocket / sendBeacon / EventSource / XMLHttpRequest / 外部 URL 直書きの送信はありません');

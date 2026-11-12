@@ -7,6 +7,7 @@
 import assert from 'node:assert/strict';
 import { rules } from '../src/rules/index.ts';
 import { analyze } from '../src/engine.ts';
+import { parseTime } from '../src/lib/der.ts';
 
 const enc = new TextEncoder();
 const ctxOf = (text) => ({
@@ -98,6 +99,30 @@ for (const t of e2e) {
     pass++;
   } catch (e) {
     failures.push(`[e2e] ${t.name}: ${e.message}`);
+  }
+}
+
+// 証明書の時刻表記（RFC 5280 の 2 桁年の解釈）を固定する
+// UTCTime: 50〜99 は 19YY、00〜49 は 20YY。ここを外すと有効期限が 100 年ずれる。
+const asn1Time = (tag, s) => {
+  const bytes = new TextEncoder().encode(s);
+  return [bytes, { tag, cls: 0, constructed: false, start: 0, valueStart: 0, end: bytes.length }];
+};
+const timeCases = [
+  ['UTCTime 49 → 2049', 0x17, '491231235959Z', '2049-12-31T23:59:59.000Z'],
+  ['UTCTime 50 → 1950', 0x17, '500101000000Z', '1950-01-01T00:00:00.000Z'],
+  ['UTCTime 99 → 1999', 0x17, '990101000000Z', '1999-01-01T00:00:00.000Z'],
+  ['UTCTime 00 → 2000', 0x17, '000101000000Z', '2000-01-01T00:00:00.000Z'],
+  ['GeneralizedTime 2050', 0x18, '20501231235959Z', '2050-12-31T23:59:59.000Z'],
+];
+for (const [name, tag, raw, want] of timeCases) {
+  try {
+    const [bytes, tlv] = asn1Time(tag, raw);
+    const got = parseTime(bytes, tlv).toISOString();
+    assert.equal(got, want, `${name}: ${got}`);
+    pass++;
+  } catch (e) {
+    failures.push(`[der] ${name}: ${e.message}`);
   }
 }
 
