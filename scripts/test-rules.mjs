@@ -88,6 +88,77 @@ const e2e = [
     input: 'ただのメモです。',
     expect: (a) => a.primary !== null && a.headline.length > 0,
   },
+  {
+    name: 'IIS（W3C 拡張ログ）を表にする',
+    input: [
+      '#Software: Microsoft Internet Information Services 10.0',
+      '#Fields: date time s-ip cs-method cs-uri-stem cs-uri-query s-port cs-username c-ip cs(User-Agent) cs(Referer) sc-status sc-substatus sc-win32-status time-taken',
+      '2026-11-13 03:14:02 10.0.0.5 GET /health_check - 443 - 172.31.2.107 Mozilla/5.0+(Windows+NT+10.0) - 200 0 0 185',
+      '2026-11-13 03:15:03 10.0.0.5 GET /apple-touch-icon.png - 443 - 172.31.1.38 Mozilla/5.0+(Windows+NT+10.0) - 404 0 2 4',
+      '2026-11-13 03:15:03 10.0.0.5 POST /api/order - 443 - 172.31.1.38 curl/8.5.0 - 500 0 0 12',
+    ].join('\n'),
+    expect: (a) => {
+      const t = a.primary?.blocks.find((b) => b.type === 'table');
+      return (
+        a.primary?.ruleId === 'log' &&
+        t.columns.includes('状態') &&
+        t.rows.some((r) => r.includes('404')) &&
+        t.rows[0].some((v) => /2026年11月13日.*JST/.test(v))
+      );
+    },
+  },
+  {
+    name: 'Squid（native）を表にする',
+    input: [
+      '1794287013.173   1064 3.115.104.61 TCP_TUNNEL/200 13621 CONNECT mirrors.fedoraproject.org:443 - HIER_DIRECT/152.2.23.104 -',
+      '1794287013.787      0 3.115.104.61 TCP_DENIED/403 3491 GET http://ftp.iij.ad.jp/pub/linux/Fedora/epel/8/Everything/x86_64/repodata/repomd.xml - HIER_NONE/- text/html',
+      '1794287013.814     22 3.115.104.61 TCP_MISS/200 4358 GET http://ftp.yz.yamagata-u.ac.jp/pub/linux/fedora-projects/epel/8/Everything/x86_64/repodata/repomd.xml - HIER_DIRECT/133.24.248.16 text/xml',
+    ].join('\n'),
+    expect: (a) => {
+      const t = a.primary?.blocks.find((b) => b.type === 'table');
+      return a.primary?.ruleId === 'log' && t.columns.includes('結果') && t.rows.some((r) => r.includes('TCP_DENIED'));
+    },
+  },
+  {
+    name: 'HAProxy を表にする',
+    input: [
+      'Nov 13 03:14:02 localhost haproxy[1228]: 172.31.2.107:35954 [13/Nov/2026:03:14:02.266] xxx_HTTPS_IN backend_https_8080/xxx-web01 0/0/2/183/185 200 1192 - - --NI 1/1/0/0/0 0/0 "GET /health_check HTTP/1.1"',
+      'Nov 13 03:15:03 localhost haproxy[1228]: 172.31.1.38:15516 [13/Nov/2026:03:15:03.770] xxx_HTTPS_IN backend_https_49012/xxx-web01 0/0/3/1/4 404 412 - - --NI 3/3/2/2/0 0/0 "GET /apple-touch-icon.png HTTP/1.1"',
+      'Nov 13 03:15:03 localhost haproxy[1228]: 172.31.1.38:15528 [13/Nov/2026:03:15:03.775] xxx_HTTPS_IN backend_https_49012/xxx-web01 0/0/0/2/2 404 412 - - --NI 4/4/1/1/0 0/0 "GET /favicon.ico HTTP/1.1"',
+    ].join('\n'),
+    expect: (a) => {
+      const t = a.primary?.blocks.find((b) => b.type === 'table');
+      return a.primary?.ruleId === 'log' && t.columns.includes('応答時間') && t.rows.some((r) => r.some((c) => c.includes('/apple-touch-icon.png')));
+    },
+  },
+  {
+    name: 'WAF の JSON Lines を表にする（CSV と誤認しない）',
+    input: [
+      '{"timestamp":1793584615217,"action":"ALLOW","httpRequest":{"clientIp":"20.222.121.96","uri":"/a.js","httpMethod":"GET"}}',
+      '{"timestamp":1793584615219,"action":"BLOCK","httpRequest":{"clientIp":"20.222.121.96","uri":"/b.gif","httpMethod":"GET"}}',
+    ].join('\n'),
+    expect: (a) => {
+      const t = a.primary?.blocks.find((b) => b.type === 'table');
+      return (
+        a.primary?.ruleId === 'jsonl' &&
+        t.columns.includes('httpRequest.clientIp') &&
+        t.rows.some((r) => r.includes('BLOCK'))
+      );
+    },
+  },
+  {
+    name: '引用符付き CSV（カンマ入りのセル）を表にする',
+    input: ['"注文ID","商品名","数量"', '"A-1001","ボールペン, 黒","3"', '"A-1002","ノート ""A5""","1"'].join('\n'),
+    expect: (a) => {
+      const t = a.primary?.blocks.find((b) => b.type === 'table');
+      return (
+        a.primary?.ruleId === 'csv' &&
+        t.columns.length === 3 &&
+        t.rows.some((r) => r.includes('ボールペン, 黒')) &&
+        t.rows.some((r) => r.includes('ノート "A5"'))
+      );
+    },
+  },
 ];
 
 for (const t of e2e) {

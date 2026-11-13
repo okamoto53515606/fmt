@@ -6,6 +6,7 @@ import { hexdumpRule, hexStringRule, unicodeEscapeRule } from './hex.ts';
 
 import { jwtRule } from './jwt.ts';
 import { jsonRule } from './json.ts';
+import { jsonLinesRule } from './jsonl.ts';
 import { xmlRule, htmlRule } from './xml.ts';
 import { codeRule } from './code.ts';
 import { csvRule } from './csv.ts';
@@ -47,6 +48,7 @@ export const rules: Rule[] = [
   pemRule,
   mailRule,
   jsonRule,
+  jsonLinesRule,
   imageRule,
   logRule,
   csvRule,

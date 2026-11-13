@@ -38,7 +38,7 @@ function tryAccessLog(lines: string[]): LogTable | null {
       user && user !== '-' ? user : '',
     ]);
   }
-  if (rows.length < 3) return null;
+  if (rows.length < 1) return null;
   return {
     id: 'access',
     label: 'Web サーバーのアクセスログ',
@@ -50,11 +50,181 @@ function tryAccessLog(lines: string[]): LogTable | null {
   };
 }
 
+/** IIS（W3C 拡張ログ）。空白区切りで、先頭に #Fields: がある。 */
+function tryIis(lines: string[]): LogTable | null {
+  const fieldLine = lines.find((l) => l.startsWith('#Fields:'));
+  if (!fieldLine) return null;
+  const fields = fieldLine.replace('#Fields:', '').trim().split(/\s+/);
+  if (!fields.includes('cs-method') || !fields.includes('sc-status')) return null;
+  if (!fields.includes('date') || !fields.includes('time')) return null;
+  // CloudFront はタブ区切りなので、タブがあればそちらの担当
+  const data = lines.filter((l) => l && !l.startsWith('#'));
+  if (data.length < 1) return null;
+  if (data[0]!.includes('\t')) return null;
+
+  const JA: Record<string, string> = {
+    'date': '日付（UTC）', 'time': '時刻（UTC）', 's-ip': 'サーバーIP', 'cs-method': 'メソッド',
+    'cs-uri-stem': 'パス', 'cs-uri-query': 'クエリ', 's-port': 'ポート', 'cs-username': 'ユーザー',
+    'c-ip': '接続元IP', 'cs(User-Agent)': 'ユーザーエージェント', 'cs(Referer)': 'リファラ',
+    'sc-status': '状態', 'sc-substatus': '副状態', 'sc-win32-status': 'Win32状態', 'time-taken': '処理時間(ms)',
+    'cs-host': 'ホスト', 'sc-bytes': '送信バイト', 'cs-bytes': '受信バイト',
+  };
+  const dateI = fields.indexOf('date');
+  const timeI = fields.indexOf('time');
+  const statusI = fields.indexOf('sc-status');
+
+  const rows: string[][] = [];
+  const errors: string[] = [];
+  for (const line of data) {
+    const parts = line.trim().split(/\s+/);
+    if (parts.length < 3) continue;
+    const row = parts.slice(0, fields.length);
+    while (row.length < fields.length) row.push('');
+    // 日時は UTC。JST に直して 1 列にまとめる
+    const d = parseDateTime(`${row[dateI] ?? ''} ${row[timeI] ?? ''}`, { assume: 'UTC' });
+    row[dateI] = d && !Number.isNaN(d.getTime()) ? toJst(d) : `${row[dateI]} ${row[timeI]}`;
+    row[timeI] = '';
+    // IIS の User-Agent は + 区切り
+    const uaI = fields.indexOf('cs(User-Agent)');
+    if (uaI >= 0) row[uaI] = (row[uaI] ?? '').replace(/\+/g, ' ');
+    rows.push(row);
+    if (statusI >= 0 && /^(?:4|5)\d{2}$/.test(row[statusI] ?? '')) errors.push(line);
+  }
+  if (rows.length < 1) return null;
+  return {
+    id: 'iis',
+    label: 'IIS（Windows サーバー）のアクセスログ',
+    columns: fields.map((f) => JA[f] ?? f),
+    rows: rows.slice(0, MAX_ROWS),
+    matched: rows.length,
+    total: data.length,
+    errors: errors.slice(0, 50),
+    note: rows.length > MAX_ROWS ? `多いため先頭 ${MAX_ROWS} 行を表示しています（ダウンロードは全件）` : undefined,
+  };
+}
+
+/** Squid（プロキシ）のログ。native 形式と combined 形式の両方。 */
+function trySquid(lines: string[]): LogTable | null {
+  const native =
+    /^(\d{10}(?:\.\d+)?)\s+(\d+)\s+(\S+)\s+([A-Z_]+)\/(\d{3})\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(\S+))?/;
+  const combined = /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([^"]*)" (\d{3}) (\S+) "([^"]*)" "([^"]*)" (\S+)/;
+
+  const nativeRows: string[][] = [];
+  const nativeErrors: string[] = [];
+  for (const line of lines) {
+    const m = native.exec(line);
+    if (!m) continue;
+    const [, ts, elapsed, client, result, status, bytes, method, url, user, peer, type] = m;
+    const d = new Date(Math.round(Number(ts) * 1000));
+    nativeRows.push([
+      Number.isNaN(d.getTime()) ? ts! : toJst(d),
+      elapsed!,
+      client!,
+      result!,
+      status!,
+      bytes!,
+      method!,
+      url!,
+      user && user !== '-' ? user : '',
+      peer!,
+      type ?? '',
+    ]);
+    if (/^(?:4|5)\d{2}$/.test(status!) || /DENIED/.test(result!)) nativeErrors.push(line);
+  }
+  if (nativeRows.length >= 1) {
+    return {
+      id: 'squid',
+      label: 'Squid（プロキシ）のログ',
+      columns: ['日時', '処理時間(ms)', '接続元IP', '結果', '状態', 'バイト数', 'メソッド', 'URL', 'ユーザー', '転送先', '種類'],
+      rows: nativeRows.slice(0, MAX_ROWS),
+      matched: nativeRows.length,
+      total: lines.length,
+      errors: nativeErrors.slice(0, 50),
+    };
+  }
+
+  const combinedRows: string[][] = [];
+  const combinedErrors: string[] = [];
+  for (const line of lines) {
+    const m = combined.exec(line);
+    if (!m) continue;
+    const [, ip, user, , time, req, status, bytes, ref, ua, result] = m;
+    if (!/^TCP_/.test(result!)) continue;
+    const [method = '', ...rest] = (req ?? '').split(' ');
+    combinedRows.push([
+      toJstOrRaw(time ?? ''),
+      ip ?? '',
+      user && user !== '-' ? user : '',
+      method,
+      rest.join(' '),
+      status ?? '',
+      bytes ?? '',
+      ref && ref !== '-' ? ref : '',
+      ua ?? '',
+      result!,
+    ]);
+    if (/^(?:4|5)\d{2}$/.test(status ?? '')) combinedErrors.push(line);
+  }
+  if (combinedRows.length < 1) return null;
+  return {
+    id: 'squid',
+    label: 'Squid（プロキシ）のログ',
+    columns: ['日時', '接続元IP', 'ユーザー', 'メソッド', 'URL', '状態', 'バイト数', 'リファラ', 'ユーザーエージェント', '結果'],
+    rows: combinedRows.slice(0, MAX_ROWS),
+    matched: combinedRows.length,
+    total: lines.length,
+    errors: combinedErrors.slice(0, 50),
+  };
+}
+
+/** HAProxy の HTTP ログ */
+function tryHaproxy(lines: string[]): LogTable | null {
+  const re =
+    /^([A-Z][a-z]{2}\s+\d{1,2} \d{2}:\d{2}:\d{2}) (\S+) haproxy\[(\d+)\]: (\S+?):(\d+) \[([^\]]+)\] (\S+) (\S+) ([\d/]+) (\d{3}) (\d+) (.*)$/;
+  const rows: string[][] = [];
+  const errors: string[] = [];
+  for (const line of lines) {
+    const m = re.exec(line);
+    if (!m) continue;
+    const [, time, , , client, port, reqTime, front, backend, timers, status, bytes, rest] = m;
+    const reqMatch = /"([^"]*)"/.exec(rest ?? '');
+    const req = reqMatch?.[1] ?? '';
+    const [method = '', ...pathRest] = req.split(' ');
+    const t = (timers ?? '').split('/');
+    // Tq/Tw/Tc/Tr/Ta の最後（合計に近い値）
+    const total = t[t.length - 1] ?? '';
+    rows.push([
+      toJstOrRaw(time!),
+      `${client}:${port}`,
+      front!,
+      backend!,
+      total ? `${total} ms` : '',
+      status!,
+      bytes!,
+      method,
+      pathRest.join(' '),
+      reqTime ?? '',
+    ]);
+    if (/^(?:4|5)\d{2}$/.test(status!)) errors.push(line);
+  }
+  if (rows.length < 1) return null;
+  return {
+    id: 'haproxy',
+    label: 'HAProxy（ロードバランサー）のログ',
+    columns: ['日時', '接続元', '受付', '転送先', '応答時間', '状態', 'バイト数', 'メソッド', 'パス', '受付日時'],
+    rows: rows.slice(0, MAX_ROWS),
+    matched: rows.length,
+    total: lines.length,
+    errors: errors.slice(0, 50),
+    note: '日時は syslog の部分（年なし）を補って表示しています。正確な日時は「受付日時」列を見てください',
+  };
+}
+
 /** CloudFront 標準ログ（タブ区切り） */
 function tryCloudFront(lines: string[]): LogTable | null {
   const fieldLine = lines.find((l) => l.startsWith('#Fields:'));
   const data = lines.filter((l) => l && !l.startsWith('#'));
-  if (data.length < 3) return null;
+  if (data.length < 1) return null;
   const first = data[0]!.split('\t');
   if (first.length < 10) return null;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(first[0] ?? '')) return null;
@@ -111,7 +281,7 @@ function trySyslog(lines: string[]): LogTable | null {
     if (/(error|fatal|failed|rejected|denied|timeout|bounce|status=(?:bounced|deferred)|warning)/i.test(msg!))
       errors.push(line);
   }
-  if (rows.length < 3) return null;
+  if (rows.length < 1) return null;
   return {
     id: 'syslog',
     label: 'システムログ（syslog / メールログ）',
@@ -133,7 +303,7 @@ function tryErrorLog(lines: string[]): LogTable | null {
     if (!m) continue;
     rows.push([toJstOrRaw(m[1]!), m[2]!, m[3] ?? '', m[4]!]);
   }
-  if (rows.length < 3) return null;
+  if (rows.length < 1) return null;
   return {
     id: 'errorlog',
     label: 'Web サーバーのエラーログ',
@@ -172,8 +342,17 @@ function tryLogfmt(lines: string[]): LogTable | null {
 
 export function parseLogs(text: string): LogTable | null {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length < 3) return null;
-  return tryCloudFront(lines) ?? tryAccessLog(lines) ?? tryErrorLog(lines) ?? trySyslog(lines) ?? tryLogfmt(lines);
+  if (lines.length < 1) return null;
+  return (
+    tryIis(lines) ??
+    tryCloudFront(lines) ??
+    trySquid(lines) ??
+    tryHaproxy(lines) ??
+    tryAccessLog(lines) ??
+    tryErrorLog(lines) ??
+    trySyslog(lines) ??
+    tryLogfmt(lines)
+  );
 }
 
 /** TSV 用にタブ・改行をエスケープ */

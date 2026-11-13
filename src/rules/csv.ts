@@ -48,22 +48,24 @@ export function parseCsv(text: string, delim: string): string[][] {
 function sniff(text: string): { delim: string; label: string; rows: string[][] } | null {
   const lines = nonEmptyLines(text).slice(0, 30);
   if (lines.length < 2) return null;
+  // 1 行 1 JSON（WAF ログ・構造化ログ）を CSV と誤認しない
+  const jsonish = lines.filter((l) => /^\s*[[{]/.test(l)).length;
+  if (jsonish / lines.length >= 0.8) return null;
+
   const candidates = [
     { delim: '\t', label: 'タブ区切り（TSV）' },
     { delim: ',', label: 'カンマ区切り（CSV）' },
     { delim: ';', label: 'セミコロン区切り（CSV）' },
   ];
   for (const c of candidates) {
-    const counts = lines.map((l) => l.split(c.delim).length - 1);
-    const first = counts[0] ?? 0;
-    if (first < 1) continue;
-    const consistent = counts.filter((n) => n === first).length;
-    if (consistent / counts.length < 0.8) continue;
-    if (first + 1 < 2) continue;
+    // 引用符（"a,b" や "" のエスケープ）を考慮して列数を数える
     const rows = parseCsv(text, c.delim);
     if (rows.length < 2) continue;
-    const widths = rows.map((r) => r.length).filter((n) => n > 1);
-    if (widths.length < 2) continue;
+    const widths = rows.slice(0, 30).map((r) => r.length);
+    const first = widths[0] ?? 0;
+    if (first < 2) continue;
+    const consistent = widths.filter((n) => n === first).length;
+    if (consistent / widths.length < 0.8) continue;
     return { ...c, rows };
   }
   return null;
