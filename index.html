@@ -81,18 +81,13 @@
             <span>エラーの意味を日本語で</span>
           </label>
           <div class="spacer"></div>
-          <label class="btn btn-sub" id="btnFile" for="fileInput" role="button" tabindex="0"
-            >画像を選ぶ</label
-          >
-          <input
-            type="file"
-            id="fileInput"
-            accept="image/*,.heic,.heif"
-            multiple
-            class="visually-hidden"
-            aria-hidden="true"
-            tabindex="-1"
-          />
+          <!-- file input をボタンの上に透明で重ねる。
+               iOS Safari は「非表示の input を JS で click()」を受け付けないため。 -->
+          <label class="btn btn-sub file-btn" id="btnFile">
+            画像を選ぶ
+            <input type="file" id="fileInput" class="file-input" accept="image/*" multiple
+              aria-label="画像を選ぶ" />
+          </label>
         </div>
 
         <div id="imageList" class="image-list"></div>

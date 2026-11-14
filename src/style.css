@@ -749,19 +749,26 @@ dl.stats dd.is-warn { color: var(--warn); }
 
 /* ---------- モバイル向けの調整 ---------- */
 
-/* ファイル選択の input は「存在するが大きさゼロ」にする。
-   display:none（hidden 属性）だと iOS Safari で label を押しても開かないことがある。 */
-.visually-hidden {
+/* ファイル選択の input は「ボタンの上に透明で重ねる」。
+   iOS Safari は display:none や 1px に縮めた input を label / JS から
+   開こうとすると無反応になることがあるため、input 自身をタップさせる。 */
+.file-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.file-input {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
   padding: 0;
   border: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 100px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* タッチ端末ではドラッグ＆ドロップの案内を出さない（できないため） */
