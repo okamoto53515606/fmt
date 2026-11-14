@@ -19,6 +19,9 @@ import { buildStats } from './lib/stats.ts';
 const MAX_DEPTH = 3;
 const PRIMARY_MIN = 55;
 const ALTERNATE_MIN = 22;
+/** これより大きい入力では「ほかの見方」を 1 つだけ作る（変換の作りすぎで数秒待たされるのを防ぐ） */
+const BIG_INPUT = 100_000;
+const MAX_BUILDS_BIG = 2;
 
 export interface TextInput {
   kind: 'text';
@@ -129,27 +132,34 @@ function headlineFor(primary: { match: Match } | null, alternates: { title: stri
 }
 
 /** マスキングを出力（表示用ブロックとテキスト系ダウンロード）に適用する */
-async function applyMaskBlocks(blocks: Block[]): Promise<Block[]> {
+async function applyMaskBlocks(blocks: Block[], accounts: ReadonlySet<string>): Promise<Block[]> {
+  // 別のブロックで判明したアカウントIDを、断片的なセルにも効かせる
+  const m = (s: string) => (accounts.size ? maskText(s, accounts).text : maskText(s).text);
   const out: Block[] = [];
   for (const b of blocks) {
     switch (b.type) {
       case 'text':
-        out.push({ ...b, text: maskText(b.text).text });
-        break;
       case 'code':
-        out.push({ ...b, text: maskText(b.text).text });
-        break;
       case 'markdown':
-        out.push({ ...b, text: maskText(b.text).text });
+        out.push({ ...b, text: m(b.text) });
         break;
       case 'kv':
-        out.push({ ...b, items: b.items.map((i) => ({ ...i, v: maskText(i.v).text })) });
+        out.push({
+          ...b,
+          title: b.title === undefined ? undefined : m(b.title),
+          items: b.items.map((i) => ({ ...i, v: m(i.v) })),
+        });
         break;
       case 'table':
-        out.push({ ...b, rows: b.rows.map((r) => r.map((c) => maskText(c).text)) });
+        out.push({
+          ...b,
+          title: b.title === undefined ? undefined : m(b.title),
+          columns: b.columns.map(m),
+          rows: b.rows.map((r) => r.map(m)),
+        });
         break;
       case 'notice':
-        out.push({ ...b, text: maskText(b.text).text });
+        out.push({ ...b, title: b.title === undefined ? undefined : m(b.title), text: m(b.text) });
         break;
       default:
         out.push(b);
@@ -158,14 +168,14 @@ async function applyMaskBlocks(blocks: Block[]): Promise<Block[]> {
   return out;
 }
 
-async function applyMaskResult(result: Result): Promise<Result> {
-  const blocks = await applyMaskBlocks(result.blocks);
+async function applyMaskResult(result: Result, accounts: ReadonlySet<string>): Promise<Result> {
+  const blocks = await applyMaskBlocks(result.blocks, accounts);
   const downloads = await Promise.all(
     result.downloads.map(async (d) => {
       if (!/^text\/|json|xml|csv|tab-separated|html/i.test(d.blob.type)) return d;
       try {
         const text = await d.blob.text();
-        return { ...d, blob: new Blob([maskText(text).text], { type: d.blob.type }) };
+        return { ...d, blob: new Blob([maskText(text, accounts).text], { type: d.blob.type }) };
       } catch {
         return d;
       }
@@ -193,7 +203,8 @@ export async function analyze(input: Input, opts: AnalyzeOptions = {}): Promise<
   scored.sort((a, b) => b.match.score - a.match.score || (b.rule.weight ?? 0) - (a.rule.weight ?? 0));
 
   const built: { rule: ClassifierRule; match: Match; result: Result }[] = [];
-  for (const s of scored.slice(0, 6)) {
+  const maxBuilds = ctx.text.length > BIG_INPUT ? MAX_BUILDS_BIG : 6;
+  for (const s of scored.slice(0, maxBuilds)) {
     try {
       built.push({ ...s, result: await s.rule.transform(ctx, s.match) });
     } catch (e) {
@@ -239,16 +250,18 @@ export async function analyze(input: Input, opts: AnalyzeOptions = {}): Promise<
     }
   }
 
-  const maskCounts = ctx.kind === 'text' ? maskText(ctx.text).counts : emptyCounts();
+  const firstMask = ctx.kind === 'text' ? maskText(ctx.text) : null;
+  const maskCounts = firstMask?.counts ?? emptyCounts();
+  const accountIds = new Set(firstMask?.accounts ?? []);
   const stats: StatItem[] = await buildStats(base);
   const sha256 = await sha256Hex(base.originBytes);
 
   let primary = primaryBuilt?.result ?? null;
-  if (primary && opts.mask) primary = await applyMaskResult(primary);
+  if (primary && opts.mask) primary = await applyMaskResult(primary, accountIds);
   if (opts.mask) {
     for (let i = 0; i < alternates.length; i++) {
       const alt = alternates[i]!;
-      alternates[i] = { ...alt, result: await applyMaskResult(alt.result) };
+      alternates[i] = { ...alt, result: await applyMaskResult(alt.result, accountIds) };
     }
   }
 

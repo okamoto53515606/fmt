@@ -80,7 +80,33 @@ const KEY_PATTERNS: { name: string; re: RegExp }[] = [
   { name: '秘密鍵ブロック', re: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g },
 ];
 
-export function maskText(input: string): { text: string; counts: MaskCounts; found: string[] } {
+export function maskText(
+  input: string,
+  knownAccounts?: ReadonlySet<string>,
+): { text: string; counts: MaskCounts; found: string[]; accounts: string[] } {
+  // 他のブロックで判明した ID を渡されたときは、キャッシュを使わない
+  if (!knownAccounts?.size) {
+    const hit = CACHE.get(input);
+    if (hit) return hit;
+  }
+  const res = maskCompute(input, knownAccounts);
+  if (!knownAccounts?.size) {
+    if (CACHE.size >= 6) {
+      const first = CACHE.keys().next();
+      if (!first.done) CACHE.delete(first.value);
+    }
+    CACHE.set(input, res);
+  }
+  return res;
+}
+
+/** 同じ文字列を何度もマスクするので結果を使い回す（エンジンがブロックごとに呼ぶ） */
+const CACHE = new Map<string, { text: string; counts: MaskCounts; found: string[]; accounts: string[] }>();
+
+function maskCompute(
+  input: string,
+  knownAccounts?: ReadonlySet<string>,
+): { text: string; counts: MaskCounts; found: string[]; accounts: string[] } {
   const counts = emptyCounts();
   const found: string[] = [];
   let text = input;
@@ -100,7 +126,11 @@ export function maskText(input: string): { text: string; counts: MaskCounts; fou
   });
 
   // 1.5 AWS アカウントID（ARN / 2段階認証のラベル / account の文脈）
-  const maskAccount = (id: string) => `********${id.slice(-4)}`;
+  const accountIds = new Set<string>(knownAccounts ?? []);
+  const maskAccount = (id: string) => {
+    accountIds.add(id);
+    return `********${id.slice(-4)}`;
+  };
   text = text.replace(/\b(arn:aws[a-z-]*:[a-z0-9-]*:[a-z0-9-]*:)(\d{12})\b/g, (_m, prefix: string, id: string) => {
     counts.accounts++;
     found.push('AWS アカウントID');
@@ -120,6 +150,19 @@ export function maskText(input: string): { text: string; counts: MaskCounts; fou
     },
   );
 
+  // 1.5b ホスト名・URL に埋め込まれたアカウントID
+  //      （210387976006.dkr.ecr… / s3://fmt-210387976006-ap-northeast-1）
+  text = text.replace(/(\b\d{12})(\.(?:dkr\.ecr|s3|amazonaws)\.)/g, (_m, id: string, rest: string) => {
+    counts.accounts++;
+    found.push('AWS アカウントID');
+    return `${maskAccount(id)}${rest}`;
+  });
+  text = text.replace(/(\bs3:\/\/[a-z0-9][a-z0-9.-]*?)(\d{12})(?=[-/])/g, (_m, head: string, id: string) => {
+    counts.accounts++;
+    found.push('AWS アカウントID');
+    return `${head}${maskAccount(id)}`;
+  });
+
   // 1.6 認証ヘッダ（Authorization: Bearer xxx / Basic xxx）
   text = text.replace(/\b(Bearer|Basic)\s+([A-Za-z0-9._~+/=-]{12,})/g, (m, scheme: string, token: string) => {
     if (token.includes('*')) return m;
@@ -138,6 +181,15 @@ export function maskText(input: string): { text: string; counts: MaskCounts; fou
   text = text.replace(/([\\/]Users[\\/])([^\\/\s"'<>|]+)/g, maskPath);
   text = text.replace(/(\/home\/)([^\/\s"'<>|]+)/g, maskPath);
 
+  // 1.9 JWT（ログイン情報のトークン）
+  //      ヘッダ・本文は jwt ルールが別途表示するので、文字列だけ短くする
+  text = text.replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g, (m) => {
+    if (m.includes('*')) return m;
+    counts.keys++;
+    found.push('JWT（ログイン情報のトークン）');
+    return `${m.slice(0, 10)}…（中略）…${m.slice(-4)}`;
+  });
+
   // 2. API キー
   for (const p of KEY_PATTERNS.slice(0, -1)) {
     text = text.replace(p.re, (m) => {
@@ -149,7 +201,6 @@ export function maskText(input: string): { text: string; counts: MaskCounts; fou
   }
 
   // 2.5 KEY=VALUE / KEY: VALUE 形式の機密（.env や設定の貼り付け）
-  //     既知のキー（AKIA… など）を先に伏せているので、伏せ字だらけの値には触らない
   text = text.replace(
     /\b((?:[A-Za-z0-9]{1,20}[_-])*(?:api[_-]?key|access[_-]?key(?:[_-]?id)?|secret(?:[_-]?key)?|client[_-]?secret|private[_-]?key|token|password|passwd|pwd|session[_-]?id|auth[_-]?token))\b(\s*[=:]\s*)(["']?)([^\s"'`,;]{6,})\3/gi,
     (m, name: string, sep: string, _quote: string, value: string) => {
@@ -214,5 +265,14 @@ export function maskText(input: string): { text: string; counts: MaskCounts; fou
     return `${a}.${b}.*.*`;
   });
 
-  return { text, counts, found: [...new Set(found)] };
+  // 9. 一度 AWS のアカウントIDと判明した番号は、同じ入力の他の場所でも伏せる
+  //    （コマンドの grep 条件や `for p in fmt-210387976006 …` のような裸の出現）
+  for (const id of accountIds) {
+    text = text.replace(new RegExp(`\\b${id}\\b`, 'g'), () => {
+      counts.accounts++;
+      return `********${id.slice(-4)}`;
+    });
+  }
+
+  return { text, counts, found: [...new Set(found)], accounts: [...accountIds] };
 }

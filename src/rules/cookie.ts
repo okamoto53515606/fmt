@@ -41,7 +41,14 @@ export const cookieRule: ClassifierRule = {
     const t = ctx.text.trim();
     if (!t) return null;
     const lines = nonEmptyLines(t);
-    const isHeader = /^(set-)?cookie:/im.test(t);
+    const headerLines = lines.filter((l) => /^(set-)?cookie:/i.test(l)).length;
+    const isHeader = headerLines > 0;
+
+    // 会話ログや手順書に 1 行だけ混ざっている場合を Cookie とみなさない
+    // （巨大な表を作ってしまい、解析も遅くなる）
+    if (isHeader && (headerLines / lines.length < 0.1 || (headerLines < 2 && lines.length > 20))) {
+      return null;
+    }
 
     // ヘッダが無い場合は「1 行に ; 区切りで 3 つ以上」のときだけ Cookie とみなす
     // （複数行の key=value 設定ファイルを Cookie と誤判定しないため）
