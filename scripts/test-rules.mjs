@@ -5,6 +5,7 @@
  * Node 24 の型ストリップ機能で .ts を直接読み込む（ビルド不要）。
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { rules } from '../src/rules/index.ts';
 import { analyze } from '../src/engine.ts';
 import { parseTime } from '../src/lib/der.ts';
@@ -194,6 +195,102 @@ for (const [name, tag, raw, want] of timeCases) {
     pass++;
   } catch (e) {
     failures.push(`[der] ${name}: ${e.message}`);
+  }
+}
+
+// ===== 実ログ（ダミー化した GitHub Copilot Chat のログ）の回帰テスト =====
+// test/fixtures/copilot-chat/*.txt は実ログをダミー化したもの（`/tmp/make-fixtures` で生成）。
+// 見るのは 2 点: 《会話ログとして判定できるか》と《マスクが漏れていないか》。
+const FIXTURES = new URL('../test/fixtures/copilot-chat/', import.meta.url);
+
+/** フィクスチャ自体に実データが戻っていないか（コピーし直したときの事故を防ぐ） */
+const FORBIDDEN_IN_FIXTURE = ['okamo', 'descktop', '.tokyo', '210387976006', 'vcyhhDv'.toLowerCase(), '@gmail.', 'test99999999'];
+
+/** 出力に残っていたら漏れとみなすもの */
+const LEAK_DETECTORS = [
+  { name: 'メールアドレス', re: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g },
+  { name: '電話番号', re: /\b0\d{1,4}-\d{1,4}-\d{3,4}\b/g },
+  { name: 'AWSアクセスキー', re: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },
+  { name: 'OpenAIキー', re: /\bsk-[A-Za-z0-9_-]{16,}\b/g },
+  { name: 'Googleキー', re: /\bAIza[0-9A-Za-z_-]{30,}\b/g },
+  { name: 'GitHubトークン', re: /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/g },
+  { name: 'Slackトークン', re: /\bxox[abposr]-[A-Za-z0-9-]{10,}\b/g },
+  { name: 'JWT', re: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g },
+  { name: '秘密鍵', re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/g },
+  { name: 'otpauth の secret', re: /\bsecret=[A-Z2-7]{8,}/gi },
+  { name: '利用者名を含むパス', re: /(?:[A-Za-z]:[\\/]+Users[\\/]+|\/Users\/)([^\s"'<>|\\/]+)/g },
+];
+const SAFE_HOME = new Set([
+  'workspace', 'ubuntu', 'user', 'users', 'runner', 'node', 'app', 'codespace', 'vscode',
+  'root', 'admin', 'administrator', 'ec2-user', 'sandbox', 'default', 'test', 'tmp',
+  'shared', 'public', 'home', 'git', 'www', 'deploy', 'build', 'agent', 'example',
+]);
+
+/** 画面（主結果・ほかの見方・補足）＋テキストの保存ファイルを全部つなげる */
+async function renderedText(a) {
+  const parts = [a.headline];
+  const walk = (blocks) => {
+    for (const b of blocks) {
+      switch (b.type) {
+        case 'text':
+        case 'code':
+        case 'markdown':
+          parts.push(b.text);
+          break;
+        case 'notice':
+          parts.push(b.title ?? '', b.text);
+          break;
+        case 'kv':
+          parts.push(b.title ?? '', ...b.items.flatMap((i) => [i.k, i.v, i.note ?? '']));
+          break;
+        case 'table':
+          parts.push(b.title ?? '', b.note ?? '', ...b.columns, ...b.rows.flat());
+          break;
+        case 'html':
+          parts.push(b.html);
+          break;
+      }
+    }
+  };
+  if (a.primary) walk(a.primary.blocks);
+  for (const alt of a.alternates) walk(alt.result.blocks);
+  walk(a.notes);
+  const downloads = [...(a.primary?.downloads ?? []), ...a.alternates.flatMap((x) => x.result.downloads)];
+  for (const d of downloads) {
+    if (/^text\/|json|xml|csv|tab-separated|html|markdown/i.test(d.blob.type)) parts.push(await d.blob.text());
+  }
+  return parts.join('\n');
+}
+
+for (const name of ['fmt', 'akira', 'rm', 'ttp']) {
+  try {
+    const raw = readFileSync(new URL(`${name}.txt`, FIXTURES), 'utf8');
+    for (const w of FORBIDDEN_IN_FIXTURE) {
+      assert.ok(!raw.toLowerCase().includes(w), `${name}: フィクスチャに実データ「${w}」が残っています`);
+    }
+
+    const a = await analyze({ kind: 'text', text: raw }, { mask: true });
+    assert.equal(a.primary?.ruleId, 'chatlog', `${name}: 会話ログと判定されない（${a.primary?.ruleId}）`);
+    assert.equal(a.confidence, 'high', `${name}: 確度が high でない（${a.confidence}）`);
+
+    const out = await renderedText(a);
+    for (const d of LEAK_DETECTORS) {
+      const found = [...new Set([...raw.matchAll(d.re)].map((m) => m[0]))].filter((v) => {
+        if (d.name === '利用者名を含むパス') {
+          const user = /(?:Users[\\/]+|\/Users\/)([^\s"'<>|\\/]+)/.exec(v)?.[1] ?? '';
+          return !SAFE_HOME.has(user.toLowerCase());
+        }
+        return true;
+      });
+      const leaked = found.filter((v) => out.includes(v));
+      assert.equal(leaked.length, 0, `${name}: ${d.name} が出力に ${leaked.length} 種残っています`);
+    }
+
+    assert.ok(out.includes('発言の一覧'), `${name}: 発言の一覧が出ていない`);
+    assert.ok(out.includes('道具'), `${name}: 道具の集計が出ていない`);
+    pass++;
+  } catch (e) {
+    failures.push(`[chatlog] ${name}: ${e.message}`);
   }
 }
 

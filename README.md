@@ -209,6 +209,9 @@ export const myRule: ClassifierRule = {
 ```
 
 - `fixtures` を書くと `npm test` が input → 期待スコアを検証します（**判定ツールの品質はここで守ります**）。
+- `test/fixtures/copilot-chat/*.txt` は **実際の Copilot Chat ログをダミー化した回帰テスト用データ**です（値はすべてサンプルに置換済み、実データは含みません）。
+  `npm test` がこの 4 本について「会話ログと判定できるか」と「マスクが漏れていないか」を検査します。
+  メール・電話・APIキー・JWT・AWS アカウントID・利用者名のパスが出力に残っていたら失敗します。
 - `scripts/sample-cases.mjs` に 1 件足すと、`docs/report.md` の before → after と検証（`npm run test:samples`）の両方に反映されます。
 - サンプル画像に **2段階認証の QR** を入れると `npm run check:samples` が失敗します（公開リポジトリに秘密を入れないため）。
 - 返せるブロック: `text` / `code` / `kv` / `table` / `markdown` / `image` / `notice`

@@ -1,0 +1,676 @@
+User: 競合を徹底調査して、ttpのSEO対策、LLMO(AI検索）の対策をしたい。過去に窓の杜ダイジェストニュースにも掲載されている。LPは CloudFront S3の静的でOK(DNSレコードだけ私がやる） ttp.example-inc.comでよいか？（ドメイン）。まずは競合調査と　妙案があればほしいです。
+
+GitHub Copilot: Optimized tool selectionまずプロジェクトの中身と、実際の競合の検索結果を把握します。
+
+Read , lines 1 to 120
+
+Read , lines 1 to 200
+
+Read 
+
+競合の実際の検索結果と、既存の掲載状況を調べます。
+
+Ran Brave LLM Context 
+Completed with input: {
+  "query": "Tera Term マクロ GUI 管理 ツール 接続 自動ログイン フリーソフト",
+  "count": 20,
+  "country": "JP",
+  "search_lang": "jp"
+}
+
+Ran Brave LLM Context 
+Completed with input: {
+  "query": "窓の杜 TTP Tera Term Pilot",
+  "count": 10,
+  "country": "JP",
+  "search_lang": "jp"
+}
+
+Read , lines 1 to 400
+
+Read , lines 1 to 200
+
+競合の構造が見えてきました。重要そうな「Tera Term 5 で同梱ツールが削除された」件を検証します。
+
+Ran Brave LLM Context 
+Completed with input: {
+  "count": 15,
+  "country": "JP",
+  "query": "Tera Term 5 TeraTerm Menu 同梱されない 削除 LogMeTT TTLEditor Collector",
+  "search_lang": "jp"
+}
+
+Ran Brave LLM Context 
+Completed with input: {
+  "count": 15,
+  "country": "JP",
+  "query": "RLogin ターミナル マクロ 自動ログイン 接続先管理 比較",
+  "search_lang": "jp"
+}
+
+Read , lines 1 to 250
+
+Read , lines 1 to 200
+
+競合構造は掴めました。最後に、現時点でTTPがどこに出ているか／指名検索の状況を確認します。
+
+Ran Brave LLM Context 
+Completed with input: {
+  "count": 10,
+  "country": "JP",
+  "query": "\"Tera Term Pilot\" TTP ダウンロード",
+  "search_lang": "jp"
+}
+
+Ran Brave LLM Context 
+Completed with input: {
+  "count": 10,
+  "country": "JP",
+  "query": "teraterm 接続先 一覧 管理 ツール おすすめ フリーソフト 代替",
+  "search_lang": "jp"
+}
+
+Read , lines 1 to 150
+
+Read , lines 1 to 250
+
+実際のマクロ生成部分を確認して、訴求と実装がズレないようにします。
+
+Read 
+
+調査完了しました。前提として**重要な発見が1つ**あります（後述の「LogMeTT 空白」）。以下、競合調査 → ドメイン回答 → 妙案の順でまとめます。
+
+---
+
+# 1. 競合調査
+
+## 1.1 SERP構造（クエリクラスタ別の占拠状況）
+
+実際に検索して確認した現状です。
+
+| クエリクラスタ | 上位を占めているもの | 性質 | TTPの立場 |
+|---|---|---|---|
+| `teraterm マクロ ログイン` / `自動ログイン` | Qiita、j-oosk.com、note、個人ブログ | **「マクロの書き方」解説記事**（コードスニペット） | 土俵が違う。ここは取れないし取る必要も薄い |
+| `teraterm 自動ログ` | j-oosk、ITSakura、インソース | 設定手順 + **AI概要が生成されている** | LLMO余地あり（後述） |
+| `teraterm 接続先 管理` / `一覧` | RLogin 記事（SIOS / CARTA / cdrive / mamezou / ITreview） | **「TeraTerm の不満 → RLogin」文脈** | ここが本命。ただしRLogin一色 |
+| `teraterm 窓の杜` | 窓の杜公式（Tera Term ライブラリ） | 権威サイト独占 | 間接的にしか入れない |
+| `Tera Term Pilot` | **自社ブログ + GitHub のみ** | 公式サイトが存在しない | ★指名検索でもLP不在 |
+
+**最重要の観察**: 上位記事のサンプルコードは**ほぼ全部が平文パスワード**です。`PASSWORD = 'password'` / `/passwd=xxx` を `.ttl` に直書きする例が、Qiita・j-oosk・choge-blog・it-life・humo-life・pesysyon のすべてに載っています。つまり**競合コンテンツは構造的に自分の弱点を晒している**。
+
+## 1.2 実プレイヤー（ツール単位）
+
+| ツール | 状態 | TTPとの関係 |
+|---|---|---|
+| **TeraTerm Menu** | Tera Term 同梱・現役（v1.24 / 5.7.0で更新） | **最大の競合**。ただしレジストリ保存・暗号化なし・自動ログなし・「なんかちょっと使いづらい」と評される（cdrive記事） |
+| **LogMeTT** | **Tera Term 5.0（2023-10-15）で同梱削除**、クローズドソース | ★★ **後継の座が空席** |
+| TTLEditor / Collector | 同時に削除 | 同上 |
+| **RLogin** | 活発。タブ/分割/SFTP/接続先管理 | 「TeraTerm の不満の受け皿」として記事が大量。TTPとは競合ではなく**併用**（RLoginにTTPは不要だが、TeraTerm利用者には刺さる） |
+| TeratermListLoginMacro (blacknon) | .ttl + host.list の古典 | 平文・メンテ不能 |
+| TeraGait (note, HTA) | 2026-01の個人作 | 小さいが同ポジション |
+| 各社自作 PowerShell + WinForms | note/Qiita に複数 | 「自作した」記事。**TTPが不要にする相手** |
+
+## 1.3 空白地帯（＝狙うべき場所）
+
+1. **「LogMeTT が消えた」の受け皿** — GUIマクロランチャーという概念自体が Tera Term 5 で消え、誰も埋めていない
+2. **「マクロを書かない人」向けの情報** — 既存記事は100%「書く人」向け
+3. **マクロ生成という発想** — `teraterm マクロ 生成` は完全に空いている
+4. **AWS SSM / ECS Exec のGUI** — AWS公式はCLI前提。日本語のGUI情報が薄い
+5. **平文パスワードの代替手段の比較** — 「やめましょう」記事はあるが、**代替策の比較**は無い
+
+---
+
+# 2. ドメイン：`ttp.example-inc.com` で進めてよいか
+
+**結論：進めてOK。ただし3つの条件付き。**
+
+| 観点 | 評価 |
+|---|---|
+| 運用コスト | ◎ 追加費用0、DNSだけ |
+| 既存資産との関係 | ○ 同一登録ドメインなので組織同一性は伝わる（ただしサブドメインは独立評価） |
+| ブランド検索 | △ `ttp` 単体は**医療用語（血栓性血小板減少性紫斑病）・TTP（信頼できる第三者機関）・`ttpmenu.exe`** と衝突し、検索では絶対に勝てない |
+| 将来性 | △ 独自ドメインに移す際、フル移転が必要 |
+
+**条件：**
+
+1. **`title` / `h1` に必ず `Tera Term` と `Tera Term Pilot` を入れる**。`TTP` 単体を主役にしない（例：`TTP (Tera Term Pilot) — Tera Term マクロをGUIで管理・実行`）
+2. **既存ブログ記事は消さない**。役割分担する — 記事＝「AIと開発した話」、LP＝「製品情報・ダウンロード」。**相互リンク**を張る（今はGitHub README → 記事の一方通行）
+3. **LP内リンクは相対URL、URLは `/guide/...` のサブディレクトリ型**にする（将来 `teratermpilot.dev` 等へ移す前提）
+
+> 代替案として `example-inc.com/ttp/` パス配下も検討しましたが、既存サイトがCloudFront管理外だと構成が複雑になるため、サブドメインの方が安全です。
+
+**技術要件（CloudFront + S3）**：ACM証明書は **us-east-1**（CloudFront用）で発行、S3はOACで非公開、CloudFront Functions で `index.html` 補完と 404 処理、自動圧縮ON、HTTP/3 ON。
+
+---
+
+# 3. 妙案
+
+## 妙案①　「LogMeTT の後継」という固有名詞を取る（最優先）
+
+Tera Term 5.0 で LogMeTT は削除され、**クローズドソースなので復活しない**ことが公式に明言されています（`migrate_to_5.html`）。にもかかわらず「LogMeTT 代わり」で検索しても受け皿がありません。
+
+- LP内に `/migrate/logmett` ページを作る
+- 表記ゆれを全部拾う：`LogMeTT 代替` / `LogMeTT 使えない` / `Tera Term 5 マクロ ランチャー ない`
+- 検索ボリュームは小さいが、**競合ゼロ・意図が極めて明確・AI検索で引用されやすい**
+
+## 妙案②　「平文パスワード」の**代替策比較**記事を書く
+
+上位記事は全部 `PASSWORD = 'xxx'` を教えています。真っ向から否定すると角が立つので、**公正な比較**として書きます：
+
+> 「Tera Term でパスワードを安全に扱う3つの方法」
+> 1. `getpassword` + パスワードファイル（標準機能）
+> 2. マクロ自体を暗号化（難読化）
+> 3. TTP でマクロを生成する（環境変数渡し・ディスクに平文を残さない）
+
+**これはLLMOで最も効く形**です。AI検索は「平文パスワードは危険」という文脈でTTPを引用しやすくなります。
+
+## 妙案③　「マクロ生成」を前面に出す
+
+TTPは接続先ごとに `.ttl` を作らず、**`connect.ttl` 1本を環境変数で使い回す**設計です（`teraterm.py` で確認済み）。これは既存記事の常識（接続先ごとにマクロファイル）と真逆で、説明価値が高い。
+
+- `teraterm マクロ 生成 ツール` / `teraterm マクロ 自動生成` は完全な空白
+- LPに「生成される `.ttl`」のビフォーアフターを載せる
+
+## 妙案④　「AWS CLI 不要」で SSM/ECS Exec を取る
+
+AWS公式は SSM 接続を AWS CLI v2 前提で説明しています。TTPは **Session Manager プラグインだけで動く**。
+
+- `ssm 接続 gui` / `ecs exec gui` / `aws cli なし ssm` / `セッションマネージャー 使いにくい`
+- BtoB寄りで検索単価が高い領域。ただし**主軸にしない**（本体は Tera Term マクロ）
+
+## 妙案⑤　winget に収録する
+
+`winget install ttp` が通れば、`winget search teraterm` で発見されます。Tera Term 自体が winget で入るため、導線として自然。**パッケージマネージャ経由の発見はSEO以上に効くことがあります。**
+
+## 妙案⑥　窓の杜**ライブラリ**掲載を狙う
+
+現状は**ダイジェストニュース（2026-03-04, v1.0.0）のみ**で、ライブラリに製品ページがありません。ダイジェストは流れて消えますが、ライブラリは**永続ページ + 被リンク + 権威**が付きます。これが最大のSEOレバーです。
+
+## 妙案⑦　Bing / IndexNow を必ず入れる
+
+ChatGPT検索・Copilot・Perplexity は **Bing インデックス**を参照することが多い。Google Search Console だけでなく **Bing Webmaster Tools + IndexNow** を設定してください（S3に置くだけで運用可能）。
+
+---
+
+# 4. LP構成案
+
+```
+ttp.example-inc.com/
+├── index.html            ← 製品LP（H1: TTP (Tera Term Pilot)）
+├── compare/
+│   ├── teraterm-menu/    ← TeraTerm Menu との違い
+│   ├── rlogin/           ← RLogin との使い分け
+│   └── logmett/          ← 【妙案①】LogMeTT からの移行
+├── guide/
+│   ├── no-plaintext/     ← 【妙案②】平文パスワード対策
+│   ├── macro/            ← 【妙案③】生成されるマクロ
+│   ├── auto-logging/
+│   └── portable/
+├── aws/
+│   ├── ssm/              ← 【妙案④】
+│   └── ecs-exec/
+├── llms.txt              ← LLMO用
+├── robots.txt
+└── sitemap.xml
+```
+
+**トップページの骨子：**
+
+1. H1 + サブコピー（`Tera Term マクロを GUI で管理・実行。パスワードは暗号化、ログは自動。`）
+2. ビフォーアフター（平文 `.ttl` → 環境変数渡し）
+3. **比較表**（TTP / TeraTerm Menu / LogMeTT / RLogin）← AIが抽出しやすい
+4. スクリーンショット3枚 + 30秒のGIF
+5. インストール3ステップ
+6. FAQ（実クエリで構成）
+7. ダウンロード（GitHub Releases へ）
+
+**JSON-LD**：`SoftwareApplication`（`operatingSystem: Windows 11`, `offers: price 0`, `license: MIT`）+ `FAQPage` + `BreadcrumbList` + `Organization`
+
+**FAQに入れるべき質問**（＝実際に検索されている形）：
+- Tera Term 5 で LogMeTT が使えなくなりました。代わりになりますか？
+- TeraTerm Menu との違いは？
+- パスワードはどこに保存されますか？
+- マクロは自動生成されますか？
+- RLogin とどちらを使うべき？
+- AWS CLI なしで SSM 接続できますか？
+
+---
+
+# 5. 優先順位
+
+| 優先 | 施策 | 効果 | 工数 |
+|---|---|---|---|
+| 1 | LP（トップ + 比較表 + FAQ + JSON-LD） | 指名検索の受け皿、AI引用の一次情報 | 中 |
+| 2 | `/compare/logmett` + `/compare/teraterm-menu` | 競合ゼロ領域の独占 | 小 |
+| 3 | `/guide/no-plaintext` | LLMOで最も引用される | 小 |
+| 4 | 窓の杜ライブラリ申請 | 永続被リンク | 小（申請のみ） |
+| 5 | Bing Webmaster Tools + IndexNow | AI検索の母集団 | 小 |
+| 6 | winget 収録 | 新規発見経路 | 中 |
+| 7 | GitHub Topics 整備（`teraterm`, `teraterm-macro`, `ttl`, `ssm`, `ecs-exec`, `portable`） | リポジトリ内検索 | 極小 |
+| 8 | 既存ブログ記事 ⇄ LP 相互リンク | 評価集約 | 極小 |
+
+**やらない方がいいこと**：Qiita への自作ツール宣伝（嫌われやすい）。Zenn か自社ブログで。
+
+---
+
+# 6. 補足：`llms.txt` の中身
+
+```markdown
+# TTP (Tera Term Pilot)
+> Tera Term マクロ (ttpmacro.exe) を GUI で管理・実行する Windows アプリ。
+> 接続情報は AES-256 で暗号化、ログは自動取得、ポータブル動作。MIT ライセンス。
+
+## 概要
+- 対象: Windows 11 / Tera Term 4・5
+- 認証: パスワード・公開鍵
+- 追加機能: SSM / ECS Exec（Session Manager プラグインのみ、AWS CLI 不要）
+
+## 主要ページ
+- [TeraTerm Menu との違い](...)
+- [LogMeTT からの移行](...)
+- [パスワードを平文で書かない方法](...)
+```
+
+---
+
+## 次のアクション
+
+LP一式（HTML/CSS + JSON-LD + llms.txt + sitemap）をこのリポジトリに `lp/` として作り、GitHub Actions で S3 にデプロイする構成まで用意できます。着手してよければ言ってください。
+
+その前に1点だけ確認したいです：**既存の `www.example-inc.com` は WordPress ですか？**（相互リンクの張り方と、`/ttp/` パス案を再検討するかどうかが変わります）
+
+User: ②③がアピールしたい点かな（管理で面倒なことしてる情シスの人の役に立てば、と思ってるので）。ドメインはTTPは他と鏑なら、何がいいだろう？
+
+GitHub Copilot: ## 1. ②③ を軸にしたポジショニング
+
+②③ は実は**同じ1つの市場**を指しています。情シスが困っているのは「機能」ではなく **統制と属人化** なので、そこに翻訳すると刺さります。
+
+| | 情シスの実際の痛み | TTP の答え | 使う言葉 |
+|---|---|---|---|
+| **②平文パスワード** | 共有フォルダの `.ttl` が事実上の認証情報の山。退職者のパスワードが残る。**監査で指摘される** | 暗号化保存（AES-256 / PBKDF2 48万回）＋ **マクロには何も書かない**（環境変数渡し） | 統制・証跡・説明できる |
+| **③マクロ生成** | マクロを書ける人が1人しかいない。異動したら誰も触れない。接続先ごとに `.ttl` が増えてどれが現役か不明 | **`connect.ttl` 1本**を全員で共有。接続先はGUIの一覧で管理 | 属人化解除・標準化 |
+
+**LPのコアコピー案（2本柱）**
+
+> ### Tera Term の接続管理を、属人化させない。
+> ### 認証情報を、ファイルに残さない。
+>
+> 接続先は一覧から選ぶだけ。マクロは1本を全員で共有します。
+> パスワードは暗号化して保持し、`.ttl` には何も書きません。
+> 共有フォルダに `.ttl` が置かれていても、そこに認証情報はありません。
+
+### ②の切り口が特に強い理由
+
+**最大の競合 RLogin の公式FAQに、こう書かれています**：
+
+> 「セキュリティーを考えるならPasswordを保存しないでください」
+
+つまり **RLogin = 接続先の管理はできるが、認証情報は預けられない**。TeraTerm Menu も設定をレジストリ/ini に保存する仕様です。
+→ 「管理」と「暗号化」を同時に満たす選択肢が実質存在しない。**ここが TTP の独占領域**です。
+
+### ③の検索意図との対応
+
+| クエリ | 現在の上位 | TTPの立ち位置 |
+|---|---|---|
+| `teraterm マクロ 生成` `自動生成` | **空白** | ★独占可能 |
+| `teraterm 接続先 管理` | RLogin 一色 | 「RLogin に移行せず Tera Term のまま管理する」第3の選択肢 |
+| `teraterm パスワード 平文` | 「危険です」記事のみ | **代替策の比較**を出す（妙案②） |
+| `teraterm 属人化` `teraterm 運用 標準化` | **空白** | ★情シス直撃 |
+
+**AI検索で引用される一文**（LPにそのまま置く）：
+> Tera Term のマクロ (.ttl) にパスワードを平文で書く運用を避けたい場合、認証情報を暗号化して保持し、マクロへは環境変数で渡すツール「TTP (Tera Term Pilot)」がある。
+
+---
+
+## 2. ドメイン
+
+### まず前提：サブドメインより独自ドメインを推奨
+
+情シスが**社内展開する**ツールなので、「`example-inc.com` のサブドメインから落として」は説明が重い。独自ドメインの方が配布元として通りがよく、信頼されます。**LPを作る前の今が切り替え時**（被リンクを張った後の移転は損）。
+
+### 候補
+
+| 候補 | 読み | 衝突 | 評価 |
+|---|---|---|---|
+| **`ttpilot.jp`** | ティーティー・パイロット | 極小 | ★**推奨**。`ttpilot` で検索すると一意。`.jp` は社内展開での信頼感が高い |
+| `ttpilot.com` | 同上 | 極小 | ○ 既に `.com` を保有しているので管理一元化。第2候補 |
+| `teratermpilot.dev` | てらたーむぱいろっと | 中 | △ 意味は最強だが**「Tera Term 公式」と誤認されるリスク**。使うなら免責必須 |
+| `terapilot.jp` | てらぱいろっと | 小 | △ 短いが意味が伝わりにくい |
+| `ttp.example-inc.com` | — | 大 | × `ttp` 単体は医療用語・`ttpmenu.exe` と衝突。暫定公開用 |
+
+### 推奨：`ttpilot.jp`
+
+- **`TTP` を捨てずに衝突だけ回避**。「TTP 入れて」と社内で言えて、検索では一意
+- `ttpilot` ↔ `TTP (Tera Term Pilot)` の対応は `title` とロゴで担保
+- 13文字、口頭で言える
+
+> ⚠️ 空き状況は未確認です。`ttpilot.jp` / `.com` / `.dev` を whois で確認してください。埋まっていたら `terapilot.jp` → `ttpilot.app` の順で。
+
+### ドメイン確定後、必ず入れる免責（README と LP フッター）
+
+```
+TTP (Tera Term Pilot) は個人が開発した非公式ツールです。
+TeraTerm Project、寺西高氏、および各社とは関係ありません。
+「Tera Term」は TeraTerm Project が開発するソフトウェアの名称です。
+```
+
+これは商標・誤認の回避だけでなく、**E-E-A-T（誰が作っているか）の明示**としても効きます。
+
+### 補足
+
+- GitHub リポジトリ名は `ttp` のままでOK。移転はリンク切れのリスクがあるので、`description` と `topics` に `ttpilot` を追加するだけに留める
+- ドメイン確定後、`sitemap.xml` と `llms.txt` のURLはすべて新ドメインで固定
+
+---
+
+## 3. 次アクション
+
+ドメインを決めてもらえれば、**②③ を主軸にした LP 一式**を作ります：
+
+- トップ（2本柱のコピー → ビフォーアフター → 比較表 → FAQ → DL）
+- `/guide/no-plaintext`（②の詳細＋代替策比較）
+- `/guide/macro`（③の詳細＋生成される `.ttl` の実物）
+- `/compare/teraterm-menu`、`/compare/rlogin`、`/compare/logmett`
+- JSON-LD、`sitemap.xml`、`robots.txt`、`llms.txt`
+- GitHub Actions で S3 + CloudFront へデプロイ
+
+`ttpilot.jp` で進めてよければ、そのまま着手します（ドメインは後から一括置換できるように作ります）。
+
+User: ありがとう。example-inc として展開したい https://www.example-inc.com/articles/organizing-example-world-repositories-and-sites 参照なので、xxxx.example-inc.com にはこだわりたいです。　そのうえでドメイン名ないかね？
+
+GitHub Copilot: 
+
+Fetched https://www.example-inc.com/articles/organizing-example-world-repositories-and-sites
+
+構成ガイドを読みました。命名規則が明確ですね — **「プロダクト名の識別部分を小文字で」**（`9NodesInsight`→`insight`、`dot-`→`dot`、`MyRecycling`→`myrecycling`、`comment-channel` はハイフン区切り可）。
+
+## 結論
+
+### `ttpilot.example-inc.com`
+
+`TTP (Tera Term Pilot)` の識別部分を残しつつ、`ttp` という文字列の衝突を回避できます。既存9サイトの並びに自然に入ります。
+
+| サブドメイン | 規則との整合 | 口頭 | 衝突 | 判定 |
+|---|---|---|---|---|
+| **`ttpilot`** | ○ `insight` と同型（修飾語を落として識別語を残す） | 「ティーティー・パイロット」 | **なし**（`ttpilot` で一意） | ★**推奨** |
+| `tt-pilot` | ◎ `comment-channel` と同型 | 「ティーティー・パイロット」 | **なし**（文字列に `ttp` を含まない） | ○ ハイフンを許容するなら |
+| `pilot` | ◎ `dot` / `akira` と同型（最短） | 「パイロット」 | 小（一般名詞） | △ 後で `pilot` 系が増えると困る |
+| `ttp` | ◎ リポジトリ名と一致 | 「ティーティーピー」 | **大** | × |
+| `teraterm` | △ | — | **大** | × **推奨しない** |
+
+## なぜ `ttp` を避けるか（正直な整理）
+
+**URLに `ttp` が入ってもSEO上の不利はほぼありません。** 回避する理由はブランド側です：
+
+1. `ttp` 単体は検索で**医療用語（血栓性血小板減少性紫斑病）・TTP（信頼できる第三者機関）・`ttpmenu.exe`** に埋もれる。ブランドを育てられない
+2. 口頭で「ティーティーピー」と言っても通じない。情シスへの社内展開で説明コストが増える
+3. 構成ガイドの表に `ttp.example-inc.com` と書いても、初見で何か分からない
+
+`ttpilot` なら、この3つが同時に解決します。
+
+## なぜ `teraterm` を避けるか
+
+`teraterm.example-inc.com` は**「Tera Term 公式」と受け取られる形**です。example-inc が Tera Term を所有しているように見えるため、TeraTerm Project との関係で誤認を招きます。ドメイン名として避けるべきです。
+
+（`ttpilot` でも、LP フッターに免責は必須です）
+
+```
+TTP (Tera Term Pilot) は個人が開発した非公式ツールです。
+TeraTerm Project、寺西高氏、および各社とは関係ありません。
+```
+
+## 構成ガイドへの追記イメージ
+
+| サブドメイン | リポジトリ | インフラ |
+|---|---|---|
+| **ttpilot.example-inc.com** | ttp | AWS（S3 + CloudFront） |
+
+リポジトリ名は `ttp` のままで問題ありません（`dot-` → `dot`、`9NodesInsight` → `insight` と同じ考え方）。
+
+## 実務メモ
+
+- **ACM証明書は us-east-1** で `ttpilot.example-inc.com` を発行（CloudFront用）
+- CloudFront は**新規ディストリビューション**でOK。既存の `www`（Next.js + Lambda Function URL）には一切影響しません
+- Route53 は `ttpilot` の CNAME を1本追加するだけ
+- 公開後、**構成ガイド記事に1行追記**して LP へ内部リンク（同一ドメイン配下なので評価が集まります）
+- 既存の「TTP をAIと開発」記事も LP へリンク（今は GitHub Releases への一方通行）
+
+---
+
+## ②③ の訴求と、この名前の相性
+
+`ttpilot` は「**Pilot（操舵する）**」なので、②③ のメッセージと相性が良いです。
+
+> **Tera Term の接続管理を、属人化させない。**（③）
+> **認証情報を、ファイルに残さない。**（②）
+
+「パイロット」＝**人が舵を握る（統制できる）**という含意があり、"AIに任せきり" ではなく "情シスが管理できる" という立ち位置に合います。
+
+---
+
+`ttpilot.example-inc.com` で進めてよければ、②③ を主軸にした LP 一式（トップ＋`/guide/no-plaintext`＋`/guide/macro`＋比較3ページ＋JSON-LD＋`llms.txt`＋デプロイworkflow）を作ります。ハイフン派なら `tt-pilot` で作ります。どちらにしますか？
+
+User: ありがとう。ttp-teraterm-ssm はどうでしょう？　ttpとしては teraterm機能とssm接続機能の２系統なので。長すぎ？？
+
+GitHub Copilot: 長さは**34文字**（`ttp-teraterm-ssm.example-inc.com`）で、既存の `comment-channel.example-inc.com`（32文字）とほぼ同じ。**長さ自体は許容範囲です。**
+
+ただ、**別の3点**が引っかかります。
+
+## 気になる3点
+
+| # | 問題 | 理由 |
+|---|---|---|
+| 1 | **`ttp-teraterm` が同語反復** | TTP = *Tera Term* Pilot。`ttp-teraterm` は「テラタームパイロットのテラターム」と読めてしまい、初見だと意味が取れない |
+| 2 | **`ssm` が主機能を脇に置く** | 本体は Tera Term マクロ管理、SSM は**任意の追加機能**。ホスト名に `ssm` を入れると「AWSツール」に見え、情シスの主要な検索意図（②③）から外れる。将来 SFTP やポート転送を足したら名前が嘘になる |
+| 3 | **`teraterm` を含むホスト名** | 「Tera Term 公式」と誤認される形。TeraTerm Project との関係で避けたい（前回と同じ理由） |
+
+加えて、**ハイフン2つ・3セグメント**はタイプミス率が上がり、口頭でも「ティーティーピー・テラターム・エスエスエム」と長い。社内展開で「このURLから落として」と言いにくいです。
+
+## 「2系統」を伝えたいなら、置き場所はホスト名ではなくパス
+
+その発想は正しいです。ただし**ホスト名＝ブランド、パス＝機能**に分けると、両方成立します。
+
+```
+ttpilot.example-inc.com/            ← 製品LP（2系統を並べて見せる）
+ttpilot.example-inc.com/guide/macro/  ← 系統1: Tera Term マクロ管理
+ttpilot.example-inc.com/aws/ssm/      ← 系統2: SSM / ECS Exec 接続
+```
+
+これなら**2系統であることはLPとパスで完全に伝わり**、ドメインは覚えやすく、機能追加しても名前が古びません。構成ガイドの表でも1行で済みます。
+
+## 比較
+
+| | 文字数 | 2系統の表現 | 公式誤認 | 口頭 | 拡張性 |
+|---|---|---|---|---|---|
+| `ttpilot` | 25 | パスで表現 | 低 | ○ | ◎ |
+| `ttp-teraterm-ssm` | 34 | ◎（ホスト名で表現） | **中** | △ | **×** |
+| `tt-pilot` | 26 | パスで表現 | 低 | ○ | ◎ |
+
+---
+
+**結論：`ttp-teraterm-ssm` は「長いから」ではなく「ホスト名に機能を2つ並べると、後で必ず破綻するから」避けたい**です。
+
+`ttpilot.example-inc.com` ＋ `/guide/macro`・`/aws/ssm` のパス構成を推します。
+
+この形で LP を作り始めてよいですか？（ドメインは後から一括置換できるように作ります）
+
+User: 了解です。ttpilotでいきます。実装お願いします！tokyoリージョンでお願いします。静的サイトなのでCSPなどのセキュリティは厳しくしてください。
+
+GitHub Copilot: 実装に入ります。まず既存の構成と仕様を正確に把握します。
+
+Read 
+
+Searched for regex `add_command|add_cascade|label=` (`**/src/ttp/app.py`), 12 results
+
+Read 
+
+Read 
+
+Searched for regex `text=|title\(` (`**/src/ttp/app.py`), 14 results
+
+Read 
+
+Read 
+
+Read , lines 1 to 60
+
+Read , lines 1 to 80
+
+仕様と素材を確認しました。実装に入ります。
+
+Created 9 todos
+
+Created 
+
+Created 
+
+Created 
+
+CSP が厳しいので、JSON-LD がブロックされないかを実測します（ここは推測で進めると構造化データを静かに失うため）。
+
+Created 
+
+Ran terminal command:  mkdir -p /home/workspace/ttp/lp/assets/screenshots && cp /home/workspace/ttp/docs/screenshot/TTPList.png /home/workspace/ttp/docs/screenshot/TTPConnectionSetting.png /home/workspace/ttp/lp/assets/screenshots/ && ls -la /home/workspace/ttp/lp/assets/screenshots/
+
+Ran terminal command:  cd /tmp && python3 serve_lp.py
+
+Opened `Browser`
+
+Ran Playwright code
+Completed with input: await page.addInitScript(() => {
+  window.__csp = [];
+  document.addEventListener('securitypolicyviolation', (e) => {
+    window.__csp.push(e.violatedDirective + ' | ' + (e.blockedURI || '-'));
+  });
+});
+await page.goto('http://127.0.0.1:8765/', { waitUntil: 'load' });
+return await page.evaluate(() => {
+  const ld = document.querySelector('script[type="application/ld+json"]');
+  return {
+    violations: window.__csp,
+    ldCount: document.querySelectorAll('script[type="application/ld+json"]').length,
+    ldLength: ld ? ld.textContent.length : 0,
+    ldParses: ld ? (() => { try { return !!JSON.parse(ld.textContent); } catch (e) { return 'PARSE_ERROR'; } })() : 'NONE',
+    bodyBg: getComputedStyle(document.body).backgroundColor,
+    h1: document.querySelector('h1') ? document.querySelector('h1').innerText : 'NONE',
+    images: Array.from(document.images).map(i => i.naturalWidth)
+  };
+});
+
+Ran Playwright code
+Completed with input: await page.evaluate(async () => {
+  window.scrollTo(0, document.body.scrollHeight);
+  await new Promise(r => setTimeout(r, 800));
+  window.scrollTo(0, 0);
+});
+await page.waitForTimeout(500);
+return await page.evaluate(() => ({
+  violations: window.__csp,
+  images: Array.from(document.images).map(i => ({ src: i.getAttribute('src'), w: i.naturalWidth })),
+  links: Array.from(document.querySelectorAll('a[href^="/"]')).map(a => a.getAttribute('href')),
+  tableWidth: document.querySelector('table') ? document.querySelector('table').scrollWidth : 0
+}));
+
+Captured browser screenshot
+Completed with input: {
+  "pageId": "00000000-0000-4000-8000-000000000000"
+}
+
+
+
+
+```
+
+```
+
+
+Ran Playwright code
+Completed with input: await page.setViewportSize({ width: 1280, height: 900 });
+await page.reload({ waitUntil: 'load' });
+await page.evaluate(async () => {
+  window.scrollTo(0, document.body.scrollHeight);
+  await new Promise(r => setTimeout(r, 600));
+  window.scrollTo(0, 0);
+});
+await page.waitForTimeout(400);
+await page.screenshot({ path: '/tmp/lp-full.png', fullPage: true });
+return 'ok';
+
+Ran Playwright code
+Completed with input: await page.evaluate(() => {
+  const el = document.querySelector('.ba');
+  el.scrollIntoView({ block: 'start' });
+});
+await page.waitForTimeout(300);
+return await page.evaluate(() => {
+  const el = document.querySelector('.ba');
+  const r = el.getBoundingClientRect();
+  return { top: r.top, height: r.height, width: r.width, cols: getComputedStyle(el).gridTemplateColumns };
+});
+
+Ran Playwright code
+Completed with input: await page.setViewportSize({ width: 1280, height: 900 });
+await page.waitForTimeout(300);
+await page.evaluate(async () => {
+  document.documentElement.style.scrollBehavior = 'auto';
+  const el = document.querySelector('.ba');
+  const y = el.getBoundingClientRect().top + window.scrollY - 70;
+  window.scrollTo({ top: y, behavior: 'instant' });
+  await new Promise(r => setTimeout(r, 300));
+});
+await page.waitForTimeout(300);
+return await page.evaluate(() => {
+  const el = document.querySelector('.ba');
+  const r = el.getBoundingClientRect();
+  return { vw: window.innerWidth, top: r.top, height: r.height, width: r.width, cols: getComputedStyle(el).gridTemplateColumns };
+});
+
+Captured browser screenshot
+Completed with input: {
+  "pageId": "00000000-0000-4000-8000-000000000000"
+}
+
+Ran Playwright code
+Completed with input: return await page.evaluate(() => {
+  const g = document.querySelector('.grid-3');
+  const s = getComputedStyle(g);
+  const cs = document.querySelector('link[rel=stylesheet]');
+  return {
+    innerWidth: window.innerWidth,
+    mq820: window.matchMedia('(max-width: 820px)').matches,
+    gridCols: s.gridTemplateColumns,
+    gap: s.gap,
+    sheetHref: cs ? cs.href : null,
+    btnColor: getComputedStyle(document.querySelector('.nav .btn')).color,
+    cardCount: g.children.length
+  };
+});
+
+Ran Playwright code
+Completed with input: await page.evaluate(async () => {
+  document.documentElement.style.scrollBehavior = 'auto';
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  await new Promise(r => setTimeout(r, 200));
+  window.scrollTo({ top: 0, behavior: 'instant' });
+});
+await page.waitForTimeout(300);
+return await page.evaluate(() => {
+  const ba = document.querySelector('.ba');
+  const kv = document.querySelector('.kv');
+  return {
+    baCols: getComputedStyle(ba).gridTemplateColumns,
+    kvCols: getComputedStyle(kv).gridTemplateColumns,
+    docHeight: document.documentElement.scrollHeight
+  };
+});
+
+Captured browser screenshot
+Completed with input: {
+  "pageId": "00000000-0000-4000-8000-000000000000"
+}
+
+
+
+Fetched https://teratermproject.github.io/manual/5/ja/macro/command/getpassword.html
+
+Made changes.

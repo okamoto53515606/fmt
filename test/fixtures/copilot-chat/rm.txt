@@ -1,0 +1,562 @@
+User: 競合を徹底分析し、SEO対策、LLMO(AI検索向け）をしたい。相談①スマホ対応もしたほうがいいだろうか？相談②フォト消しプライバシーを真似した！って文句いわれないようにしたい。ご意見下さい。
+
+GitHub Copilot: Optimized tool selection
+
+Read , lines 1 to 200
+
+Read memory 
+
+Read , lines 200 to 400
+
+Read , lines 1 to 200
+
+Searched for regex `@media|touchstart|pointerdown|touch-action` (`**/src/**`), 5 results
+
+No matches found. Your search pattern might be excluded completely by either the search.exclude settings or .*ignore files.
+If you believe that it should have results, you can check into the .*ignore files and the exclude setting (here are some excluded patterns for reference:[**/node_modules,**/bower_components,**/*.code-search]).
+Then if you want to include those files you can call the tool again by setting "includeIgnoredFiles" to true.
+
+Read , lines 1 to 120
+
+Read , lines 480 to 521
+
+Ran Brave LLM Context 
+Completed with input: {
+  "query": "フォト消しプライバシー ソースネクスト 価格 機能 AI 自動検出",
+  "count": 10,
+  "search_lang": "jp",
+  "country": "JP"
+}
+
+Ran Brave LLM Context 
+Completed with input: {
+  "query": "モザル モザイク 無料 ブラウザ 画像 加工 シンユー",
+  "count": 10,
+  "search_lang": "jp",
+  "country": "JP"
+}
+
+Read , lines 1 to 200
+
+Read , lines 1 to 120
+
+Ran Brave LLM Context 
+Completed with input: {
+  "count": 6,
+  "country": "JP",
+  "maximum_number_of_tokens": 5000,
+  "query": "顔 ナンバープレート 自動検出 モザイク 無料 オンライン ブラウザ 2026",
+  "search_lang": "jp"
+}
+
+Ran Brave LLM Context 
+Completed with input: {
+  "count": 6,
+  "country": "JP",
+  "maximum_number_of_tokens": 5000,
+  "query": "スクリーンショット APIキー 隠す マスク 無料 ツール",
+  "search_lang": "jp"
+}
+
+Read , lines 1 to 80
+
+Read , lines 1 to 60
+
+
+
+Fetched 2 resources
+
+Ran terminal command:  for p in / /robots.txt /sitemap.xml /nonexistent-abc; do echo "== $p"; curl -s -o /dev/null -w "status=%{http_code} type=%{content_type} size=%{size_download}\n" "https://rm.example-inc.com$p"; done; echo "== headers /"; curl -sI https://rm.example-inc.com/ | sed -n '1,25p'
+
+Searched for regex `CustomError|ErrorDocument|DefaultRootObject|ResponseHeadersPolicy|FunctionAssociations` (`**/template.yaml`), 5 results
+
+Read , lines 90 to 140
+
+Searched for regex `keydown|clipboard|paste|dragover|drop|window\.innerWidth|matchMedia|isMobile|navigator\.userAgent` (`**/src/**`), 20 results
+
+Read 
+
+Ran terminal command:  cd /home/workspace/rm && ls -la public/ && echo "---" && for p in /favicon.svg /og.jpg; do echo "== $p"; curl -s -o /dev/null -w "status=%{http_code} type=%{content_type} size=%{size_download}\n" "https://rm.example-inc.com$p"; done
+
+Ran Brave LLM Context 
+Completed with input: {
+  "count": 8,
+  "country": "JP",
+  "maximum_number_of_tokens": 3000,
+  "query": "rm.example-inc.com",
+  "search_lang": "jp"
+}
+
+Read , lines 1 to 40
+
+Read , lines 1 to 80
+
+Read , lines 80 to 134
+
+Searched for regex `createImageBitmap|resizeWidth|maxSide|canvas.width|canvas.height` (`**/src/image.ts`), 10 results
+
+Created 
+
+Updated memory file 
+
+`seo-llmo-plan.md` に分析と施策をまとめました。要点だけ。
+
+## 競合の構図
+
+| | 形態 | 自動検出 | スマホ | 穴 |
+|---|---|---|---|---|
+| フォト消しプライバシー（3,980円） | アプリ | 顔・ナンバー・看板・QR | × | APIキー／ターミナル／パスは対象外 |
+| モザル（無料） | Web | なし | ○ | 自動検出なし |
+| Mozaiku（無料） | Web | 顔＋ナンバー | ○ | 文字系なし |
+| バナー工房 | Web（**サーバー処理**） | なし | ○ | アップロード型 |
+| Canva | Web | なし | ○ | ログイン必須 |
+
+**rm の勝ち筋は「モザイクツール」ではなく「公開前チェック」**です。写真の顔・ナンバーは Canva／モザル／Mozaiku が最強の領域で、正面から戦っても取れません。一方 **「スクショの APIキー・パス・端末プロンプト」は競合ゼロの空白地帯**で、ここだけは rm の独占です（近いのは CLI の `screenshot-masker` くらい）。
+
+## 実測で見つかった技術的な不具合
+
+- `/robots.txt` `/sitemap.xml` `/存在しないURL` が**すべて `index.html` を 200 text/html で返す**（`template.yaml` の `CustomErrorResponses` が原因）。クローラは robots も sitemap も読めていません。
+- `h1` が無い／構造化データゼロ／canonical なし。モザルは `SoftwareApplication` + `FAQPage` を実装済みです。
+- title が「rm —」で始まり**検索語が入っていない**。加えて `rm` は Unix コマンドと衝突するので、AI に「rm とは」と聞くとコマンドの説明が返ります。常に「写真マスキングの rm」と併記する必要があります。
+
+## 相談① スマホ対応 → **やる。ただし Phase A だけ（1〜2日）**
+
+フル対応は不要です。理由は3つ。
+
+1. 現状 `.layout` は 980px 以下でも 3カラム（268px + 1fr + 330px）のままで、**スマホでは編集領域が数pxに潰れる**＝「壊れている」状態。
+2. Google も AI 検索のクローラも**モバイル版で評価**する。「PC専用」の宣言は検索面の評価を自分で下げています。
+3. ただし rm の本命（スクショ作業）は PC。スマホ需要は競合最強の「顔・ナンバー」なので、フル投資の回収は見込み薄。
+
+**Phase A**: 1カラム化＋下部固定バー、右パネルをタブ化、`createImageBitmap` の**デコード時縮小**（現状は原寸デコード後に縮小＝48MP で 190MB 級のメモリ消費）、OCR は長辺1280px、38MB取得前の確認。受け入れ条件は「iPhone Safari で 1枚 → 顔検出 → 黒塗り → 保存」が通ること。
+
+注意: **動くまで「スマホ対応」と書かない**（景表法の優良誤認）。まず実装→バッジを `PC推奨（スマホは1枚ずつ）` に。
+
+## 相談② パクリと言われないために
+
+**法的リスクより風評リスクの方が大きい**のが実情です。機能・アイデアは法で保護されないので、著作権・意匠・商標・不競法で争われる可能性は低い。問題になるのは「見た目」「言葉」「態度」です。
+
+やらないこと:
+- title / description / OGP / ドメイン / アプリ内UI に相手の名称を出さない（本文のみ）
+- 相手のスクショ・図・コピー（「隠す作業から確認する作業へ」等）を流用しない
+- 「互換」「上位版」「代わり」など根拠のない優越表示をしない
+
+やること:
+- `/about.html` に**由来を自分の言葉で**書く（源さんの記事がきっかけ／実装・UI・文言はすべて独自／**非提携**／商標は各社に帰属）。README の「経緯」はすでに理想的なので、それをサイトにも出す。AI 検索はこの由来ページを引用するので、先に書いておくことが最大の防御になります。
+- 違いは**機能の多寡ではなく対象の違い**で語る（「写真」ではなく「開発者のスクショ」）。
+- J-PlatPat で商標・意匠・特許を1〜2時間だけ確認し、日付つきで記録を残す。
+
+## 次の3手
+
+1. `robots.txt` / `sitemap.xml` の実ファイル化＋404→200 の廃止＋Search Console（DNS認証）（半日）
+2. `h1`＋説明コンテンツ＋JSON-LD＋title/description 書き換え（半日）
+3. `/about.html`（由来と非提携）＋`/hide-api-key.html`（唯一の空白地帯）（1日）
+
+この3つで「1ページ・主題不明・クロール不全」が解消され、AI 検索が引用できる最低限の形になります。詳細・コピー案・実装コードは `seo-llmo-plan.md` に置きました。
+
+Made changes.
+
+User: ありがとう。SEO面ではきっかけ（源さんの記事がきっかけとか、私の個人的な感情）は完全排除したい（ツールとして使いたいひとには関係ない話）　searchconsoleはexample-inc.comのルートドメインで登録運用済。　残りもできますか？
+
+GitHub Copilot: Read 
+
+Read , lines 190 to 232
+
+Read 
+
+Read , lines 120 to 300
+
+Read 
+
+Created 
+
+Created 
+
+Created 
+
+Created 
+
+
+
+
+```
+
+```
+
+
+
+
+
+```
+
+```
+
+
+
+
+
+```
+
+```
+
+
+
+
+
+```
+
+```
+
+```
+
+```
+
+
+
+
+
+```
+
+```
+
+```
+
+```
+
+
+
+Tool execution failed
+
+
+```
+
+```
+
+
+
+
+
+```
+
+```
+
+
+Ran terminal command:  cd /home/workspace/rm && ls -d node_modules >/dev/null 2>&1 && echo "node_modules: ok" || echo "node_modules: missing"; node -e '
+const fs=require("fs");
+const html=fs.readFileSync("index.html","utf8");
+const m=[...html.matchAll(/<script type="application/ld\+json">([\s\S]*?)</script>/g)];
+console.log("json-ld blocks:",m.length);
+m.forEach((x,i)=>{try{JSON.parse(x[1]);console.log(" block",i+1,"JSON ok")}catch(e){console.log(" block",i+1,"JSON ERROR",e.message)}});
+const h1=(html.match(/<h1/g)||[]).length;
+const h2=(html.match(/<h2/g)||[]).length;
+console.log("h1:",h1,"h2:",h2);
+console.log("canonical:",/rel="canonical"/.test(html));
+'
+
+Ran terminal command:  cd /home/workspace/rm && node -e '
+const fs=require("fs");
+const html=fs.readFileSync("public/hide-api-key.html","utf8");
+const m=[...html.matchAll(/<script type="application/ld\+json">([\s\S]*?)</script>/g)];
+m.forEach((x,i)=>{try{JSON.parse(x[1]);console.log("hide-api-key block",i+1,"ok")}catch(e){console.log("ERROR",e.message)}});
+console.log("h1:",(html.match(/<h1/g)||[]).length,"canonical:",/rel="canonical"/.test(html));
+' && python3 -c "import xml.dom.minidom,sys;xml.dom.minidom.parse('public/sitemap.xml');print('sitemap.xml: XML ok')" && bash -n scripts/deploy.sh && echo "deploy.sh: syntax ok" && python3 -c "
+import yaml,sys
+yaml.safe_load(open('template.yaml'))
+print('template.yaml: YAML ok')
+" 2>&1 | tail -3
+
+Ran terminal command:  cd /home/workspace/rm && python3 -c "
+import yaml
+class L(yaml.SafeLoader): pass
+L.add_multi_constructor('!', lambda l,s,n: None)
+d=yaml.load(open('template.yaml'),Loader=L)
+beh=d['Resources']['SiteDistribution']['Properties']['DistributionConfig']
+print('custom error responses:', beh.get('CustomErrorResponses'))
+print('default root:', beh.get('DefaultRootObject'))
+" && npm run build 2>&1 | tail -20
+
+Ran terminal command:  cd /home/workspace/rm && ls dist | head -20 && echo "---" && grep -c "site-info" dist/index.html && grep -o '<title>[^<]*</title>' dist/index.html && grep -o 'rel="canonical"[^>]*' dist/index.html
+
+Ran terminal command:  cd /home/workspace/rm && npx vite preview --port 4173 --strictPort
+Tool execution failed with exit code 1
+
+Killed terminal
+
+Ran terminal command:  cd /home/workspace/rm && npx vite preview --port 4174 --strictPort
+Tool execution failed with exit code 1
+
+Killed terminal
+
+Ran terminal command:  ss -ltn 2>/dev/null | awk 'NR==1 || /:(4173|4174|5173|8080|8000)\s/' ; echo "---"; for p in 4173 4174 5173; do printf "%s -> " "$p"; curl -s -o /dev/null -w "%{http_code}\n" "http://localhost:$p/" || echo "no"; done
+
+Killed terminal
+
+Ran terminal command:  cd /home/workspace/rm && npx vite preview --port 4310 --strictPort --host 127.0.0.1
+
+Made changes.
+
+User: [Terminal 00000000-0000-4000-8000-000000000000 notification: command completed with exit code 143. The terminal has been cleaned up.]
+Terminal output:
+ubuntu@WORKSTATION-01:/home/workspace$  cd /home/workspace/rm && npx vite preview --port 4310 --strictPort --host 127.0.0.1
+  ➜  Local:   http://127.0.0.1:4310/
+  ➜  press h + enter to show help
+Terminated
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GitHub Copilot: Ran terminal command:  cd /home/workspace/rm/dist && (nohup python3 -m http.server 4311 --bind 127.0.0.1 >/tmp/rm-preview.log 2>&1 &) ; sleep 1.5; curl -s -o /dev/null -w "index=%{http_code}\n" http://127.0.0.1:4311/ ; curl -s http://127.0.0.1:4311/robots.txt | head -3; curl -s -o /dev/null -w "sitemap=%{http_code} type=%{content_type}\n" http://127.0.0.1:4311/sitemap.xml
+
+Opened `Browser`
+
+Ran Playwright code
+Completed with input: await page.setViewportSize({ width: 1280, height: 900 });
+await page.reload({ waitUntil: 'load' });
+const dims = await page.evaluate(() => {
+  const l = document.querySelector('.layout');
+  const s = document.querySelector('.site-info');
+  return {
+    layoutH: l.getBoundingClientRect().height,
+    siteInfoTop: s.getBoundingClientRect().top,
+    docH: document.documentElement.scrollHeight,
+    vh: window.innerHeight,
+    bodyOverflow: getComputedStyle(document.body).overflow
+  };
+});
+console.log(JSON.stringify(dims));
+return dims;
+
+Ran Playwright code
+Completed with input: await page.evaluate(() => window.scrollTo(0, 756));
+await page.waitForTimeout(200);
+await page.screenshot({ path: '/tmp/rm-site-info.png' });
+return 'saved';
+
+Captured screenshot of 説明コンテンツのセクション
+Completed with input: {
+  "pageId": "00000000-0000-4000-8000-000000000000",
+  "element": "説明コンテンツのセクション",
+  "selector": ".site-info",
+  "scrollIntoViewIfNeeded": true
+}
+
+Captured browser screenshot
+Completed with input: {
+  "pageId": "00000000-0000-4000-8000-000000000000"
+}
+
+Navigated to http://127.0.0.1:4311/hide-api-key.html in `Browser`
+
+Captured browser screenshot
+Completed with input: {
+  "pageId": "00000000-0000-4000-8000-000000000000"
+}
+
+Navigated to http://127.0.0.1:4311/ in `Browser`
+
+Ran Playwright code
+Completed with input: await page.setViewportSize({ width: 1280, height: 800 });
+await page.reload({ waitUntil: 'load' });
+await page.waitForTimeout(400);
+const vp = page.viewportSize();
+const h = await page.evaluate(() => ({ ih: window.innerWidth, lh: document.querySelector('.layout').getBoundingClientRect().height }));
+return { vp, h };
+
+Captured browser screenshot
+Completed with input: {
+  "pageId": "00000000-0000-4000-8000-000000000000"
+}
+
+Ran terminal command:  pkill -f "http.server 4311" 2>/dev/null; rm -f /tmp/rm-preview.log; echo cleaned; aws sts get-caller-identity --query "Arn" --output text 2>&1 | head -2
+
+Ran terminal command:  cd /home/workspace/rm && AWS_REGION=ap-northeast-1 aws cloudformation describe-stacks --stack-name rm --query "Stacks[0].Parameters" --output json
+
+Ran terminal command:  cd /home/workspace/rm && AWS_REGION=ap-northeast-1 DOMAIN_NAME=rm.example-inc.com ACM_CERT_ARN=arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-4000-8000-000000000000 ./scripts/deploy.sh 2>&1 | tail -30
+
+Checked terminal output
+
+Checked terminal output
+
+Ran terminal command:  AWS_REGION=ap-northeast-1 aws cloudformation describe-stacks --stack-name rm --query "Stacks[0].[StackStatus,LastUpdatedTime]" --output text 2>&1
+
+Checked terminal output
+
+Checked terminal output
+
+Ran terminal command:  AWS_REGION=ap-northeast-1 aws cloudformation describe-stack-events --stack-name rm --max-items 3 --query "StackEvents[].{t:Timestamp,s:ResourceStatus,r:LogicalResourceId}" --output text 2>&1 | head -5
+
+Ran terminal command:  AWS_REGION=ap-northeast-1 aws cloudformation describe-stack-events --stack-name rm --max-items 40 --query "StackEvents[?contains(ResourceStatus,'FAILED')].{t:Timestamp,s:ResourceStatus,r:LogicalResourceId,reason:ResourceStatusReason}" --output json 2>&1 | head -40
+
+User: [Terminal 00000000-0000-4000-8000-000000000000 notification: command completed. The terminal has been cleaned up.]
+Terminal output:
+ubuntu@WORKSTATION-01:/home/workspace$  cd /home/workspace/rm && AWS_REGION=ap-northeast-1 DOMAIN_NAME=rm.example-inc.com ACM_CERT_ARN=arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-4000-8000-000000000000 ./scripts/deploy.sh 2>&1 | tail -30
+
+> [rm@1.0.0](mailto:rm@1.0.0) build
+> node scripts/prepare-assets.mjs && tsc --noEmit && vite build
+
+[assets] wasm を複製しました -> public/wasm
+[assets] 顔検出モデルは取得済みです
+[assets] OCR の worker/core を複製しました -> public/ocr
+[assets] OCR 英語モデルは取得済みです
+[assets] OCR 日本語モデルは取得済みです
+vite v8.3.6 building client environment for production...
+transforming...
+✓ 95 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                           22.88 kB │ gzip:   6.92 kB
+dist/assets/index-DXqk1VW6.css             9.56 kB │ gzip:   2.80 kB
+dist/assets/src-Bt_V8aCM.js               17.24 kB │ gzip:   7.29 kB
+dist/assets/vision_bundle-BG82Xbu9.js    153.74 kB │ gzip:  45.34 kB
+dist/assets/index-CMwoQ7pu.js            251.12 kB │ gzip:  80.60 kB
+dist/assets/heic2any-CFRSzj2y.js       1,352.13 kB │ gzip: 344.71 kB
+
+✓ built in 507ms
+[3/5] CloudFormation スタックを適用...
+
+Waiting for changeset to be created..
+Waiting for stack create/update to complete
+
+aws: [ERROR]: Failed to create/update the stack. Run the following command
+to fetch the list of events leading up to the failure
+aws cloudformation describe-stack-events --stack-name rm
+
+
+GitHub Copilot: `CloudFront` は `ResponseCode` と `ResponsePagePath` の同時指定が必要でした（スタックは自動ロールバックし、サイトは元の状態です）。404 ページを用意して直します。
+
+Created 
+
+
+
+
+```
+
+```
+
+
+Ran terminal command:  cd /home/workspace/rm && AWS_REGION=ap-northeast-1 DOMAIN_NAME=rm.example-inc.com ACM_CERT_ARN=arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-4000-8000-000000000000 ./scripts/deploy.sh
+
+Ran terminal command:  for p in / /robots.txt /sitemap.xml /llms.txt /hide-api-key.html /404.html /nonexistent-abc; do printf "%-22s " "$p"; curl -s -o /dev/null -w "%{http_code} %{content_type}\n" "https://rm.example-inc.com$p"; done; echo "--- robots"; curl -s https://rm.example-inc.com/robots.txt | head -4; echo "--- title"; curl -s https://rm.example-inc.com/ | grep -o '<title>[^<]*</title>'; echo "--- 404 body"; curl -s https://rm.example-inc.com/nonexistent-abc | grep -o '<title>[^<]*</title>'
+
+Ran terminal command:  curl -sI https://rm.example-inc.com/nonexistent-abc | sed -n '1,6p;/content-security-policy/p;/x-frame/p' ; echo "--- canonical"; curl -s https://rm.example-inc.com/hide-api-key.html | grep -o 'rel="canonical"[^>]*'; curl -s https://rm.example-inc.com/ | grep -c 'site-info'
+
+Updated memory file 
+
+完了しました。方針を「きっかけを書かない」に合わせて作り直し、本番まで反映済みです。
+
+## ②への対応（由来の排除）
+
+- **`/about.html`（由来・感想ページ）は作りません。** サイト上の文章は「何ができるか／使い方／注意点」だけにしました。
+- 「真似した」対策は、感情ではなく**事実だけ**を `terms.html` 第6条に置いています（特定製品の名称・意匠・コードを流用していない／他社と提携・後援・監修関係はない／記載のない製品名・会社名は各社の商標）。相手の名称はサイトのどこにも出していません。
+- 由来の記述は `README`（開発者向け文書）にのみ残しています。GitHub の表示からも消したい場合は言ってください。
+
+## 実装・デプロイしたもの
+
+| 項目 | 内容 |
+|---|---|
+| `robots.txt` / `sitemap.xml` / `llms.txt` | 実ファイル化（以前はすべて `index.html` を 200 で返していた） |
+| 404 | `403/404 → 404 + /404.html`。**存在しない URL は正しく 404** に（以前は 200 でトップを返していた） |
+| `index.html` | `h1` 追加、title/description を検索語先頭に、`canonical`、JSON-LD（`WebSite` / `SoftwareApplication` / `FAQPage`） |
+| 説明コンテンツ | アプリの下に「できること／APIキーを隠すには／顔・ナンバー／送信される？／EXIF／スマホ／精度」＋FAQ 5問（質問形の見出し・結論先出し） |
+| `/hide-api-key.html` | 唯一の空白地帯（スクショの API キー）。手順・検出できる文字列・黒塗り推奨・苦手パターン・FAQ |
+| `deploy.sh` | HTML を全件 `no-cache` で個別アップロード、robots/sitemap/llms は MIME 指定 |
+
+本番で確認済み: `/robots.txt` 200 text/plain、`/sitemap.xml` 200 application/xml、`/llms.txt` 200、`/hide-api-key.html` 200、`/nonexistent-abc` **404 + 404ページ**、CSP などのヘッダーも維持。
+
+> 途中、CloudFront の `CustomErrorResponses` は `ResponseCode` と `ResponsePagePath` の同時指定が必須という制約で一度 `UPDATE_FAILED` になりましたが、自動ロールバック後（サイト影響なし）に 404 ページを用意して再デプロイし、成功しています。
+
+## Search Console（既存プロパティでOK）
+
+`example-inc.com` のプロパティが**ドメインプロパティ**なら `rm.` も対象です（URL プレフィックス型だと対象外なので、その場合だけドメインプロパティを追加）。やることは2つだけです。
+
+1. `https://rm.example-inc.com/sitemap.xml` を送信
+2. `URL 検査` で `/` と `/hide-api-key.html` を登録リクエスト
+
+## 残り
+
+1. 上の Search Console の2操作（私では認証できないので、ここだけお願いします）
+2. 記事からのリンク獲得（Zenn / Qiita / note に `/hide-api-key.html` の内容を自分の記事として書く）
+3. 反応を見て `/number-plate.html` `/exif.html` を追加
+4. モバイル Phase A（1〜2日）
+
+`seo-llmo-plan.md` も「由来は書かない」「Search Console は既存プロパティ」に更新済みです。
+
+Made changes.
+
+User: 以下は実施済です。
+1. `https://rm.example-inc.com/sitemap.xml` を送信
+2. `URL 検査` で `/` と `/hide-api-key.html` を登録リクエスト
+今回追加したページってURLはどうなりますか？
+
+GitHub Copilot: Ran terminal command:  for p in /hide-api-key /hide-api-key/ /hide-api-key.html /llms.txt /sitemap.xml; do printf "%-24s " "$p"; curl -s -o /dev/null -w "%{http_code}\n" "https://rm.example-inc.com$p"; done
+
+追加したページの URL はすべて **`.html` 付き**です（拡張子なしは 404 になります。実測確認済み）。
+
+## 今回追加した URL
+
+| 種類 | URL | 状態 |
+|---|---|---|
+| **新しいページ** | `https://rm.example-inc.com/hide-api-key.html` | 200 / canonical はこの URL / sitemap 収録 |
+| 404 ページ | `https://rm.example-inc.com/404.html` | 200（直接開ける）/ `noindex` / sitemap 外 |
+| robots | `https://rm.example-inc.com/robots.txt` | 200 text/plain |
+| sitemap | `https://rm.example-inc.com/sitemap.xml` | 200 application/xml |
+| llms.txt | `https://rm.example-inc.com/llms.txt` | 200 text/plain |
+
+既存ページの URL は変わっていません（`/` `https://rm.example-inc.com/`、`/privacy.html`、`/terms.html`）。
+
+## 注意点
+
+- `/hide-api-key` と `/hide-api-key/` は **404** です。CloudFront のリライトをしていないため、必ず `.html` まで含めて共有・リンクしてください。
+- 拡張子なしの URL（`/hide-api-key`）でも動かしたい場合は、CloudFront Function で `/foo` → `/foo.html` に書き換える必要があります。必要なら実装します。
+- `sitemap.xml` に入っているのは `/`・`/hide-api-key.html`・`/privacy.html`・`/terms.html` の 4 件です。
+- `404.html` は検索結果に出す必要がないため sitemap に入れず `noindex` にしています。
+
+Search Console の URL 検査で `/hide-api-key.html` を登録済みなら、そのままインデックス待ちで問題ありません。
+
+User: ありがとう。git pushしたほうがいいよね？今回はリリースノートは不要です。
+
+GitHub Copilot: Ran terminal command:  cd /home/workspace/rm && git status --short && echo "--- branch" && git rev-parse --abbrev-ref HEAD && git log --oneline -3
+
+Ran terminal command:  cd /home/workspace/rm && git diff --stat && echo "--- 秘密情報スキャン" && git diff | grep -nEi "api[_-]?key\s*=\s*['"][A-Za-z0-9]{16,}|BEGIN (RSA|OPENSSH) PRIVATE" | head -5 || echo "該当なし"
+
+Ran terminal command:  cd /home/workspace/rm && git add -A && git commit -q -F - <<'MSG'
+feat: SEO/LLMO 対応と「APIキーを隠す」手順ページを追加
+
+- robots.txt / sitemap.xml / llms.txt を追加（従来は index.html を 200 で返していた）
+- 存在しない URL を 404 に変更（index.html へのフォールバックを廃止し 404.html を用意）
+- h1・説明コンテンツ・構造化データ（WebSite / SoftwareApplication / FAQPage）・canonical を追加
+- title / description / OGP を検索語先頭に変更
+- /hide-api-key.html（スクショの API キーを隠す手順）を追加
+- 利用規約に「独自実装・非提携」の一文を追加
+- deploy.sh: HTML を全件 no-cache、robots/sitemap/llms を MIME 指定で配信
+MSG
+git log --oneline -1 && git push origin main 2>&1 | tail -3
+
+Ran terminal command:  cd /home/workspace/rm && git status -sb | head -2 && git log --oneline origin/main -1
+
+はい、push 済ませました。
+
+- コミット: `c210dc1` feat: SEO/LLMO 対応と「APIキーを隠す」手順ページを追加
+- `origin/main` に反映済み（`dfc04d2..c210dc1`）、作業ツリーはクリーン
+- 
