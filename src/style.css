@@ -716,11 +716,20 @@ dl.stats dd.is-warn { color: var(--warn); }
 /* ---------- レスポンシブ ---------- */
 @media (max-width: 980px) {
   .tagline { display: none; }
+
+  /* 2 ペインを「高さ固定のグリッド」で並べるのをやめ、普通の縦並びにする。
+     高さ固定のままだと、ペインの中身がはみ出して *次のペインに重なって描画される*
+     （iOS Safari / Brave でカードやボタンが重なって見える原因）。 */
+  html,
+  body { height: auto; }
+  body { display: block; }
   .layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+    display: block;
+    height: auto;
+    min-height: 0;
   }
   .pane {
+    height: auto;
     overflow: visible;
     padding-bottom: 30px;
   }
@@ -737,11 +746,16 @@ dl.stats dd.is-warn { color: var(--warn); }
     gap: 6px;
     padding: 0 10px;
     overflow: hidden;
+    /* 高さ固定だと、文字が折り返したときにはみ出すので可変にする */
+    min-height: 52px;
+    height: auto;
+    flex: 0 0 auto;
   }
-  .badge { font-size: 10.5px; padding: 1px 7px; }
+  .badge { font-size: 10.5px; padding: 1px 7px; white-space: nowrap; }
   .badge-optional { display: none; }
   .ver { display: none; }
   .brand { font-size: 17px; }
+  .link { font-size: 12px; white-space: nowrap; padding: 6px 4px; }
   .pane { padding: 12px 12px 30px; }
   .options { gap: 10px; }
   .btn { padding: 6px 10px; }
