@@ -51,6 +51,9 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
+  /* 万一はみ出す要素があっても、画面全体が横にズレないようにする。
+     hidden だと縦スクロールの挙動が変わるため clip を使う（Safari 16+）。 */
+  overflow-x: clip;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
   font-size: 15px;
   line-height: 1.65;

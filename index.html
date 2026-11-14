@@ -135,7 +135,7 @@
 
         <h3>安全のためにやっていること</h3>
         <ul>
-          <li>配信元の CSP（Content-Security-Policy）で、外部への通信をすべて禁止しています（<code>connect-src 'none'</code>）。</li>
+          <li>配信元の CSP（Content-Security-Policy）で、fetch / XHR / WebSocket / beacon などの送信路を禁止しています（<code>connect-src 'none'</code>）。ブラウザのページ遷移そのものは CSP では止められません。</li>
           <li>解析は Web Worker で行い、画面が固まりにくいようにしています。</li>
           <li>一度読み込むと、オフラインでも動きます（Service Worker）。</li>
           <li>入力は保存しません。再読み込みすると消えます。</li>
@@ -158,6 +158,7 @@
           秘密鍵やパスワードは、そもそも他人に送らないでください。
         </p>
         <p class="muted">オープンソース（MIT）。通信先や保存の有無は誰でも確認できます。</p>
+        <p class="muted" id="helpVersion"></p>
       </div>
     </div>
 

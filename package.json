@@ -1,7 +1,7 @@
 {
   "name": "fmt",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "貼るだけで「これ何？」がわかる。ブラウザ完結のデコード＆整形ツール",
   "license": "MIT",

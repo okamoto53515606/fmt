@@ -343,6 +343,7 @@ document.addEventListener('keydown', (e) => {
 /* ---------------- 起動 ---------------- */
 
 $('version').textContent = `v${__APP_VERSION__}`;
+$('helpVersion').textContent = `バージョン v${__APP_VERSION__}`;
 paint();
 
 // Service Worker は本番ビルドのみ（開発サーバーには sw.js が無い）
