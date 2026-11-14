@@ -18,6 +18,7 @@ export const sensitiveAnnotator: AnnotatorRule = {
     if (counts.mynumbers) parts.push(`マイナンバーらしき12桁 ${counts.mynumbers}`);
     if (counts.addresses) parts.push(`住所 ${counts.addresses}`);
     if (counts.accounts) parts.push(`AWS アカウントID ${counts.accounts}`);
+    if (counts.paths) parts.push(`利用者名を含むパス ${counts.paths}`);
     if (counts.ips) parts.push(`IPアドレス ${counts.ips}`);
     if (!parts.length) return [];
 

@@ -27,6 +27,7 @@
 | CSV / TSV | 表として表示。**Excel に貼れるタブ区切り**、縦横変換、BOM 付きファイル保存。**列が多い表は自動で縦横変換**。引用符付き（`"a,b"` や `""`）も可 |
 | ログ（Web / CDN / syslog / メール） | 表に整形（**日時は日本時間**）＋エラー行の抽出＋**HTTP / SMTP コードの意味**。Apache・nginx（common / combined）、**IIS（W3C 拡張）**、**Squid（native / combined）**、**HAProxy**、CloudFront、postfix / syslog |
 | JSON Lines（1 行 1 JSON） | 表に整形。WAF や構造化ログに。**入れ子は「親.子」で列に**（CSV とは誤認しない） |
+| AI とのやりとりの生ログ（GitHub Copilot Chat など） | 発言ごとに区切って一覧化。**どこで何を実行したか**（コマンド・読み取り・検索）を集計し、整形した会話を Markdown で保存。**利用者名を含むパスや `.env` の値をマスク** |
 | メールのソース（.eml） | ヘッダと本文に分離。件名の文字コード復号、**Date は日本時間**、添付一覧（中身は開かない） |
 | Cookie | 名前と値に分解（**Expires は日本時間**）。HttpOnly / Secure / SameSite の不足を指摘 |
 | URL | ホスト・パス・パラメータに分解。**パラメータは URL デコード（二重エンコードも解除）**。追跡用パラメータを指摘 |

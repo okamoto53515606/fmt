@@ -15,6 +15,7 @@ export const emptyCounts = (): MaskCounts => ({
   addresses: 0,
   ips: 0,
   accounts: 0,
+  paths: 0,
 });
 
 const stars = (n: number) => '*'.repeat(Math.max(3, Math.min(8, n)));
@@ -23,6 +24,20 @@ function maskWord(w: string): string {
   if (w.length <= 2) return `${w[0] ?? ''}*`;
   return `${w[0]}${stars(w.length - 2)}${w[w.length - 1]}`;
 }
+
+/** `password: required` のような、秘密ではない普通の英単語 */
+const NOT_SECRET = new Set([
+  'required', 'enabled', 'disabled', 'true', 'false', 'none', 'null', 'empty', 'change',
+  'reset', 'forgot', 'unknown', 'default', 'string', 'number', 'undefined', 'placeholder',
+  'optional', 'inherit', 'automatic', 'manual', 'expired', 'invalid', 'missing',
+]);
+
+/** 実在の人名ではない、ありふれたアカウント名（/home/workspace などを伏せない） */
+const SAFE_HOME = new Set([
+  'workspace', 'ubuntu', 'user', 'users', 'runner', 'node', 'app', 'codespace', 'vscode',
+  'root', 'admin', 'administrator', 'ec2-user', 'sandbox', 'default', 'test', 'tmp',
+  'shared', 'public', 'home', 'git', 'www', 'deploy', 'build', 'agent',
+]);
 
 /** Luhn チェック（クレジットカード番号の誤検知を減らす） */
 export function luhnOk(digits: string): boolean {
@@ -105,6 +120,24 @@ export function maskText(input: string): { text: string; counts: MaskCounts; fou
     },
   );
 
+  // 1.6 認証ヘッダ（Authorization: Bearer xxx / Basic xxx）
+  text = text.replace(/\b(Bearer|Basic)\s+([A-Za-z0-9._~+/=-]{12,})/g, (m, scheme: string, token: string) => {
+    if (token.includes('*')) return m;
+    counts.keys++;
+    found.push('認証トークン');
+    return `${scheme} ${token.slice(0, 2)}${'*'.repeat(Math.max(4, token.length - 4))}${token.slice(-2)}`;
+  });
+
+  // 1.8 利用者名を含むパス（C:\Users\okamo / /Users/okamo / /home/okamo）
+  const maskPath = (m: string, prefix: string, name: string) => {
+    if (SAFE_HOME.has(name.toLowerCase())) return m;
+    counts.paths++;
+    found.push('利用者名を含むパス');
+    return `${prefix}${maskWord(name)}`;
+  };
+  text = text.replace(/([\\/]Users[\\/])([^\\/\s"'<>|]+)/g, maskPath);
+  text = text.replace(/(\/home\/)([^\/\s"'<>|]+)/g, maskPath);
+
   // 2. API キー
   for (const p of KEY_PATTERNS.slice(0, -1)) {
     text = text.replace(p.re, (m) => {
@@ -114,6 +147,18 @@ export function maskText(input: string): { text: string; counts: MaskCounts; fou
       return `${m.slice(0, keep)}${'*'.repeat(Math.max(4, m.length - keep - 4))}${m.slice(-4)}`;
     });
   }
+
+  // 2.5 KEY=VALUE / KEY: VALUE 形式の機密（.env や設定の貼り付け）
+  //     既知のキー（AKIA… など）を先に伏せているので、伏せ字だらけの値には触らない
+  text = text.replace(
+    /\b((?:[A-Za-z0-9]{1,20}[_-])*(?:api[_-]?key|access[_-]?key(?:[_-]?id)?|secret(?:[_-]?key)?|client[_-]?secret|private[_-]?key|token|password|passwd|pwd|session[_-]?id|auth[_-]?token))\b(\s*[=:]\s*)(["']?)([^\s"'`,;]{6,})\3/gi,
+    (m, name: string, sep: string, _quote: string, value: string) => {
+      if (value.includes('*') || /^[<${]/.test(value) || NOT_SECRET.has(value.toLowerCase())) return m;
+      counts.keys++;
+      found.push('設定に書かれた秘密の値');
+      return `${name}${sep}${value.slice(0, 2)}${'*'.repeat(Math.max(4, value.length - 4))}${value.slice(-2)}`;
+    },
+  );
 
   // 3. メールアドレス
   text = text.replace(/\b([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g, (_m, local: string, domain: string) => {

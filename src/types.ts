@@ -109,6 +109,8 @@ export interface MaskCounts {
   addresses: number;
   ips: number;
   accounts: number;
+  /** 利用者名を含むパス（C:\\Users\\名前 など） */
+  paths: number;
 }
 
 export interface Analysis {

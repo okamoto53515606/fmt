@@ -16,6 +16,13 @@ const SAFE_ATTRS: Record<string, string[]> = {
 
 const DROP_TAGS = new Set(['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta', 'base', 'form', 'input', 'button', 'img', 'svg', 'math', 'video', 'audio', 'source']);
 
+/**
+ * マスキングの伏せ字（`***`）が Markdown の強調として食われないようにする。
+ * `t********a@example.com` をそのまま流すと `t*a` に化けるため、
+ * 4 つ以上続く `*` だけをエスケープする（`***強調***` は 3 つなので影響しない）。
+ */
+const escapeMaskStars = (s: string) => s.replace(/\*{4,}/g, (m) => '\\*'.repeat(m.length));
+
 /** Markdown / HTML を安全な要素だけに削る（外部画像・スクリプト・フォームを落とす） */
 export function sanitizeHtml(html: string): DocumentFragment {
   const tpl = document.createElement('template');
@@ -189,7 +196,7 @@ function renderBlock(block: Block, urls: string[]): HTMLElement {
       break;
     }
     case 'markdown': {
-      const html = String(marked.parse(block.text, { gfm: true, async: false }));
+      const html = String(marked.parse(escapeMaskStars(block.text), { gfm: true, async: false }));
       const frag = sanitizeHtml(html);
       const md = el('div', 'md');
       md.append(frag);

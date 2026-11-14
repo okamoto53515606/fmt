@@ -11,6 +11,7 @@ import { xmlRule, htmlRule } from './xml.ts';
 import { codeRule } from './code.ts';
 import { csvRule } from './csv.ts';
 import { logRule } from './log.ts';
+import { chatLogRule } from './chatlog.ts';
 import { mailRule } from './mail.ts';
 import { cookieRule } from './cookie.ts';
 import { urlRule } from './url.ts';
@@ -51,6 +52,7 @@ export const rules: Rule[] = [
   jsonLinesRule,
   imageRule,
   logRule,
+  chatLogRule,
   csvRule,
   xmlRule,
   htmlRule,
