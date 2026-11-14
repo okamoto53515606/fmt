@@ -1,0 +1,27 @@
+# fmt
+
+> 貼るだけで「これ何？」がわかる、ブラウザ完結のデコード＆整形ツール。
+> 入力はサーバーへ送信しません（CSP の connect-src 'none' で外部通信を禁止、サーバーが存在しない）。
+> 判定は決まったルールで行い、LLM は使っていません。オフラインでも動作します。
+
+## ツール
+
+- [ツール一覧](https://fmt.okamomedia.tokyo/tools/): URLエンコード、Base64、JWT、JSON、EXIF・GPSなど、貼るだけで中身が分かるツールの一覧。すべてブラウザ内で完結し、入力は送信されません。
+- [URLエンコード・デコード](https://fmt.okamomedia.tokyo/url-encode/): 日本語やスペースをURLで使える形式（パーセントエンコーディング）に変換・復元。%E3%81%82 のような文字列を読める文字に戻します。二重エンコードも解除。入力はブラウザの外に出ません。
+- [Base64エンコード・デコード](https://fmt.okamomedia.tokyo/base64/): テキストをBase64に、Base64をテキストに変換。日本語（UTF-8）対応、URL-safe形式も判定。data URIを貼れば画像として表示・保存できます。入力はブラウザの外に出ません。
+- [JWT デコード](https://fmt.okamomedia.tokyo/jwt/): JWT（JSON Web Token）を貼ると、ヘッダ・Payload・有効期限（exp / iat / nbf）を日本時間で表示します。期限切れは警告。署名の検証は行いません。トークンは送信しません。
+- [JSON 整形・構文チェック](https://fmt.okamomedia.tokyo/json/): JSONを貼ると整形し、構文エラーがあれば何行目の何文字目かとよくある原因を日本語で示します。JSON Lines（1行1JSON）も自動判定。入力はブラウザの外に出ません。
+- [写真のEXIF・GPS位置情報を確認](https://fmt.okamomedia.tokyo/exif/): 写真をドロップすると、撮影日時・カメラ・GPS座標などのEXIF情報を表示し、位置情報が残っているかを判定します。画像はアップロードされません。
+
+## 事実
+
+- 料金: 無料（MIT ライセンスのオープンソース）
+- 実行場所: ブラウザ内（Web Worker）。入力は保存しない（localStorage も使わない）
+- 対応形式: JWT / JSON / XML / HTML / CSV / TSV / ログ / メール(.eml) / Cookie / URL / PEM / 画像(EXIF・QR) / Base64 / URLエンコード / 16進 / Unicodeエスケープ / Markdown / 文字化け / ハッシュ / 日時 / エラーメッセージ
+- 上限: テキスト 4MB、画像 25MB・1枚
+- できないこと: 復号（暗号化データの中身）、ハッシュの逆算、JWT の署名検証、証明書の失効確認、EXIF の削除
+- ソースコード: https://github.com/okamoto53515606/fmt
+
+## 問い合わせ
+
+- 不具合報告・要望: https://github.com/okamoto53515606/fmt/issues

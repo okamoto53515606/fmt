@@ -30,7 +30,51 @@
       content="JWT・JSON・ログ・画像・CSV・証明書などを、ブラウザの中だけで解析。通信しません。AIは使っていません。"
     />
     <meta name="twitter:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <link rel="canonical" href="https://fmt.okamomedia.tokyo/" />
     <title>fmt — 貼るだけでわかる、データの中身</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://fmt.okamomedia.tokyo/#website",
+            "name": "fmt",
+            "alternateName": "fmt — 貼るだけでわかる、データの中身",
+            "url": "https://fmt.okamomedia.tokyo/",
+            "description": "貼るだけで「これ何？」がわかる、ブラウザ完結のデコード＆整形ツール。入力は送信しません。",
+            "inLanguage": "ja",
+            "publisher": { "@id": "https://fmt.okamomedia.tokyo/#publisher" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://fmt.okamomedia.tokyo/#app",
+            "name": "fmt",
+            "url": "https://fmt.okamomedia.tokyo/",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Any (web browser)",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
+            "featureList": [
+              "JWT のデコードと有効期限の表示",
+              "JSON の整形と構文エラーの位置表示",
+              "URLエンコード / Base64 / 16進 / Unicodeエスケープの解除",
+              "CSV / TSV / ログ / JSON Lines / メールの表形式への整形",
+              "画像の EXIF・GPS・QRコードの表示",
+              "機密情報のマスキング"
+            ],
+            "isPartOf": { "@id": "https://fmt.okamomedia.tokyo/#website" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://fmt.okamomedia.tokyo/#publisher",
+            "name": "fmt",
+            "url": "https://fmt.okamomedia.tokyo/",
+            "sameAs": ["https://github.com/okamoto53515606/fmt"]
+          }
+        ]
+      }
+    </script>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./src/style.css" />
   </head>
@@ -41,13 +85,24 @@
         <span>fmt</span>
       </a>
       <span class="badge">通信しません</span>
-      <span class="badge">AIは使っていません</span>
+      <span class="badge badge-secondary">AIは使っていません</span>
       <span class="badge badge-optional">オフラインで動きます</span>
       <span class="tagline">貼るだけで「これ何？」がわかる</span>
       <div class="spacer"></div>
       <span class="ver" id="version"></span>
       <button class="link" id="btnHelp" type="button">使い方と安全性</button>
     </header>
+
+    <!-- hero:start -->
+    <div class="lp-hero lp-hero-home">
+      <h1>貼るだけで「これ何？」がわかる<small>ブラウザ完結のデコード＆整形ツール</small></h1>
+      <p class="lp-lead">
+        JWT・JSON・ログ・メール・証明書・画像などを貼ると、何なのか・どこが問題なのかを日本語で説明します。
+        解析はすべてブラウザの中だけで行い、入力した内容はどこにも送信しません。
+        <a href="./tools/">目的別のツール一覧</a> から始めることもできます。
+      </p>
+    </div>
+    <!-- hero:end -->
 
     <main class="layout">
       <section class="pane pane-input" aria-label="入力">
@@ -58,6 +113,17 @@
             <button class="link small" id="btnClear" type="button">クリア</button>
           </div>
         </div>
+
+        <p class="send-note" role="note">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>
+            <strong>入力した内容は送信されません。</strong>
+            解析はこのブラウザの中だけで完結します（サーバーがありません）。
+          </span>
+        </p>
 
         <div id="dropzone" class="dropzone">
           <textarea

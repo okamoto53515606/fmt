@@ -48,7 +48,32 @@ export function imageSize(bytes: Uint8Array): { width: number; height: number; m
   }
 }
 
-function exifLabel(key: string, value: unknown): string | null {
+const pad2 = (n: number): string => String(n).padStart(2, '0');
+
+/**
+ * EXIF の日時はタイムゾーンを持たない「撮影地の現地時間」。
+ * exifr は OffsetTime があれば UTC に直した Date を返すため、そのまま toISOString すると
+ * 09:00 撮影の写真が 00:00 と表示される。オフセットを足し戻して壁時計に戻す。
+ */
+function exifWallClock(v: Date, offset: unknown): string {
+  const m = typeof offset === 'string' ? /^([+-])(\d{2}):?(\d{2})$/.exec(offset.trim()) : null;
+  if (m) {
+    const minutes = Number(m[2]) * 60 + Number(m[3]);
+    const t = new Date(v.getTime() + (m[1] === '-' ? -minutes : minutes) * 60_000);
+    return `${t.getUTCFullYear()}-${pad2(t.getUTCMonth() + 1)}-${pad2(t.getUTCDate())} ${pad2(t.getUTCHours())}:${pad2(t.getUTCMinutes())}:${pad2(t.getUTCSeconds())}`;
+  }
+  // オフセットが無い写真は、exifr が実行環境のローカル時刻として解釈した値をそのまま使う
+  return `${v.getFullYear()}-${pad2(v.getMonth() + 1)}-${pad2(v.getDate())} ${pad2(v.getHours())}:${pad2(v.getMinutes())}:${pad2(v.getSeconds())}`;
+}
+
+/** 日時フィールドに対応するオフセットのフィールド名（Exif 2.31 以降） */
+const DATE_OFFSET_KEY: Record<string, string> = {
+  DateTimeOriginal: 'OffsetTimeOriginal',
+  CreateDate: 'OffsetTimeDigitized',
+  ModifyDate: 'OffsetTime',
+};
+
+function exifLabel(key: string, value: unknown, data: Record<string, unknown>): string | null {
   const map: Record<string, string> = {
     Make: 'メーカー',
     Model: '機種',
@@ -70,7 +95,7 @@ function exifLabel(key: string, value: unknown): string | null {
   if (!label) return null;
   let v = value;
   // EXIF の日時はタイムゾーンを持たない（撮影地の現地時間）。UTC と誤記しない。
-  if (v instanceof Date) v = v.toISOString().slice(0, 19).replace('T', ' ');
+  if (v instanceof Date) v = exifWallClock(v, data[DATE_OFFSET_KEY[key] ?? '']);
   else if (Array.isArray(v)) v = v.join(', ');
   else if (typeof v === 'object' && v !== null) return null;
   return `${label}: ${String(v).slice(0, 200)}`;
@@ -119,7 +144,7 @@ export async function inspectImage(
     } as never)) as Record<string, unknown> | undefined;
     if (data) {
       for (const [k, v] of Object.entries(data)) {
-        const line = exifLabel(k, v);
+        const line = exifLabel(k, v, data);
         if (line) exif.push({ label: line.split(':')[0]!, value: line.slice(line.indexOf(':') + 1).trim() });
       }
       const lat = typeof data.GPSLatitude === 'number' ? data.GPSLatitude : undefined;

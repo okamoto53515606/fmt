@@ -68,17 +68,32 @@ self.addEventListener('fetch', (event) => {
 
   // 画面（HTML）はネットワーク優先。オンラインなら常に最新の HTML を使い、
   // オフラインのときだけキャッシュを使う（古い画面に固定されないように）。
+  //
+  // 機能別ページ（/url-encode/ など）は CloudFront 側で /url-encode/index.html に
+  // 書き換えて配信しているため、オフライン時のフォールバックもその形で引く。
+  async function offlineNavigate(request) {
+    const exact = await caches.match(request, { ignoreSearch: true });
+    if (exact) return exact;
+
+    const url = new URL(request.url);
+    const dir = url.pathname.endsWith('/') ? url.pathname : url.pathname + '/';
+    const index = await caches.match(new URL(dir + 'index.html', url.origin).href, { ignoreSearch: true });
+    if (index) return index;
+
+    return (await caches.match(new URL('/index.html', url.origin).href)) || new Response('', { status: 504 });
+  }
+
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
         .then((res) => {
           if (res && res.ok && res.type === 'basic') {
             const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put('./index.html', copy)).catch(() => {});
+            caches.open(CACHE).then((cache) => cache.put(req, copy)).catch(() => {});
           }
           return res;
         })
-        .catch(() => caches.match('./index.html').then((hit) => hit || new Response('', { status: 504 }))),
+        .catch(() => offlineNavigate(req)),
     );
     return;
   }

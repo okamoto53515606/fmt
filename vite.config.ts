@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
+
+const page = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 /** 外部通信を一切しないため、実行時に取得するアセットは自ホストのみ。 */
 export default defineConfig({
@@ -23,6 +26,17 @@ export default defineConfig({
     // modulepreload のポリフィルは fetch を使うため無効化する（対応ブラウザのみ対象）
     modulePreload: { polyfill: false },
     rollupOptions: {
+      // 機能別ページ（scripts/gen-pages.mjs が生成する）。
+      // 1 クエリ = 1 URL にしないと、検索結果で機能名のページとして出られない。
+      input: {
+        main: page('./index.html'),
+        tools: page('./tools/index.html'),
+        urlEncode: page('./url-encode/index.html'),
+        base64: page('./base64/index.html'),
+        jwt: page('./jwt/index.html'),
+        json: page('./json/index.html'),
+        exif: page('./exif/index.html'),
+      },
       output: {
         // 依存を分けて、初回表示を軽くする（重いものは使うときに読み込む）
         manualChunks(id: string) {

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#001f3f" />
+    <meta name="description" content="URLエンコード、Base64、JWT、JSON、EXIF・GPSなど、貼るだけで中身が分かるツールの一覧。すべてブラウザ内で完結し、入力は送信されません。" />
+    <link rel="canonical" href="https://fmt.okamomedia.tokyo/tools/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="fmt" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:title" content="ツール一覧｜ブラウザ完結のデコード＆整形ツール fmt" />
+    <meta property="og:description" content="URLエンコード、Base64、JWT、JSON、EXIF・GPSなど、貼るだけで中身が分かるツールの一覧。すべてブラウザ内で完結し、入力は送信されません。" />
+    <meta property="og:url" content="https://fmt.okamomedia.tokyo/tools/" />
+    <meta property="og:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ツール一覧｜ブラウザ完結のデコード＆整形ツール fmt" />
+    <meta name="twitter:description" content="URLエンコード、Base64、JWT、JSON、EXIF・GPSなど、貼るだけで中身が分かるツールの一覧。すべてブラウザ内で完結し、入力は送信されません。" />
+    <meta name="twitter:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <title>ツール一覧｜ブラウザ完結のデコード＆整形ツール fmt | fmt</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../src/style.css" />
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"CollectionPage","@id":"https://fmt.okamomedia.tokyo/tools/","name":"ツール一覧｜ブラウザ完結のデコード＆整形ツール fmt","description":"URLエンコード、Base64、JWT、JSON、EXIF・GPSなど、貼るだけで中身が分かるツールの一覧。すべてブラウザ内で完結し、入力は送信されません。","url":"https://fmt.okamomedia.tokyo/tools/","isPartOf":{"@id":"https://fmt.okamomedia.tokyo/#website"},"mainEntity":{"@type":"ItemList","itemListElement":[{"@type":"ListItem","position":1,"name":"URLエンコード・デコード","url":"https://fmt.okamomedia.tokyo/url-encode/"},{"@type":"ListItem","position":2,"name":"Base64エンコード・デコード","url":"https://fmt.okamomedia.tokyo/base64/"},{"@type":"ListItem","position":3,"name":"JWT デコード","url":"https://fmt.okamomedia.tokyo/jwt/"},{"@type":"ListItem","position":4,"name":"JSON 整形・構文チェック","url":"https://fmt.okamomedia.tokyo/json/"},{"@type":"ListItem","position":5,"name":"写真のEXIF・GPS位置情報を確認","url":"https://fmt.okamomedia.tokyo/exif/"}]}},{"@type":"BreadcrumbList","@id":"https://fmt.okamomedia.tokyo/tools/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"fmt","item":"https://fmt.okamomedia.tokyo/"},{"@type":"ListItem","position":2,"name":"ツール一覧","item":"https://fmt.okamomedia.tokyo/tools/"}]}]}</script>  </head>
+  <body class="lp lp-hub">
+    <header class="topbar">
+      <a class="brand" href="../">
+        <img src="../favicon.svg" alt="" width="28" height="28" />
+        <span>fmt</span>
+      </a>
+      <span class="badge">通信しません</span>
+      <span class="badge badge-secondary">AIは使っていません</span>
+      <span class="badge badge-optional">オフラインで動きます</span>
+      <div class="spacer"></div>
+      <a class="link" href="../">なんでも貼れる画面へ</a>
+    </header>
+
+    <div class="lp-hero">
+      <nav class="lp-crumb" aria-label="パンくず">
+        <a href="../">fmt</a><span aria-hidden="true">›</span><span>ツール一覧</span>
+      </nav>
+      <h1>ツール一覧</h1>
+      <p class="lp-lead">fmt は「意味がわからない文字列やファイルを貼ると、何なのかを日本語で説明する」ツールです。目的別にページを分けています。どのページでも、解析はブラウザの中だけで行います。</p>
+    </div>
+
+    <div class="lp-body">
+      <section class="lp-section">
+        <h2>目的から探す</h2>
+        <ul class="lp-cards">
+            <li class="lp-card">
+              <a href="../url-encode/"><strong>URLエンコード・デコード</strong></a>
+              <span>日本語やスペースをURLで使える形式（パーセントエンコーディング）に変換・復元。%E3%81%82 のような文字列を読める文字に戻します。二重エンコードも解除。入力はブラウザの外に出ません。</span>
+            </li>
+            <li class="lp-card">
+              <a href="../base64/"><strong>Base64エンコード・デコード</strong></a>
+              <span>テキストをBase64に、Base64をテキストに変換。日本語（UTF-8）対応、URL-safe形式も判定。data URIを貼れば画像として表示・保存できます。入力はブラウザの外に出ません。</span>
+            </li>
+            <li class="lp-card">
+              <a href="../jwt/"><strong>JWT デコード</strong></a>
+              <span>JWT（JSON Web Token）を貼ると、ヘッダ・Payload・有効期限（exp / iat / nbf）を日本時間で表示します。期限切れは警告。署名の検証は行いません。トークンは送信しません。</span>
+            </li>
+            <li class="lp-card">
+              <a href="../json/"><strong>JSON 整形・構文チェック</strong></a>
+              <span>JSONを貼ると整形し、構文エラーがあれば何行目の何文字目かとよくある原因を日本語で示します。JSON Lines（1行1JSON）も自動判定。入力はブラウザの外に出ません。</span>
+            </li>
+            <li class="lp-card">
+              <a href="../exif/"><strong>写真のEXIF・GPS位置情報を確認</strong></a>
+              <span>写真をドロップすると、撮影日時・カメラ・GPS座標などのEXIF情報を表示し、位置情報が残っているかを判定します。画像はアップロードされません。</span>
+            </li>
+        </ul>
+      </section>
+
+      <section class="lp-section">
+        <h2>どのページでも同じように使えます</h2>
+        <ol>
+          <li>文字列を貼り付ける（画像はドラッグ＆ドロップ）</li>
+          <li>結果・統計・補足が自動で出ます</li>
+          <li>必要なら「機密情報をマスク」を確認してからコピー・保存します</li>
+        </ol>
+
+<p>
+  解析はすべて<strong>ブラウザの中</strong>で行います。サーバーが無いので、入力した内容が送られる先がありません。
+  配信側の CSP（Content-Security-Policy）で <code>fetch</code> / <code>XMLHttpRequest</code> / <code>WebSocket</code> /
+  <code>sendBeacon</code> を禁止しており（<code>connect-src 'none'</code>）、ビルド時に
+  <code>scripts/check-no-network.mjs</code> が送信 API の混入を検査しています。
+  入力は保存しません（再読み込みで消えます）。一度読み込めばオフラインでも動きます。
+</p>
+
+
+<p class="lp-muted">
+  このページの判定は決まったルールによるもので、AI（LLM）は使っていません。同じ入力なら同じ結果になります。
+  マスキングには取りこぼしがあります。共有前の目視確認をおすすめします。
+</p>
+
+      </section>
+
+      <footer class="lp-footer">
+        <p>
+          <a href="../">fmt（トップ）</a> ・
+          <a href="../tools/">ツール一覧</a> ・
+          <a href="https://github.com/okamoto53515606/fmt" rel="noreferrer">ソースコード（MIT）</a>
+        </p>
+        <p class="lp-muted">
+          fmt は「貼るだけで何なのかが分かる」ブラウザ完結のツールです。サーバーを持たず、入力した内容を送信しません。
+          結果は決まったルールで判定しており、AI（LLM）は使っていません。
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

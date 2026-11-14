@@ -310,6 +310,50 @@ $('btnSample').addEventListener('click', () => {
   run();
 });
 
+/* ---------------- 機能別ページのプリセット ----------------
+   /url-encode/ などのページは <body data-tool="…"> を持つ。
+   そのページで最初に入れる例と、入力欄の案内文を差し替える。 */
+
+const TOOL_PRESETS: Record<string, { label: string; text: string; placeholder: string }> = {
+  'url-encode': {
+    label: 'URL エンコード',
+    text: 'https://example.com/search?q=%E6%9D%B1%E4%BA%AC%E9%A7%85&utm_source=newsletter&page=2',
+    placeholder: '%E3%81%82 のようなエンコード済み文字列、またはURLを貼り付け',
+  },
+  base64: {
+    label: 'Base64（中身はJSON）',
+    text: 'eyJvcmRlcklkIjoiQS0xMDAyMyIsImN1c3RvbWVyIjp7Im5hbWUiOiLlsbHnlLDlpKqpg48ifSwidG90YWwiOjM5ODB9',
+    placeholder: 'テキスト、Base64文字列、または data:image/png;base64,... を貼り付け',
+  },
+  jwt: {
+    label: 'JWT',
+    text: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IuWxseeUsOWkqumDjiIsImV4cCI6MTcwMDAwMDAwMH0.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
+    placeholder: 'eyJhbGciOi… で始まるトークンを貼り付け',
+  },
+  json: {
+    label: 'JSON（末尾にカンマがある例）',
+    text: '{"orderId":"A-10023","customer":{"name":"山田 太郎","email":"taro.yamada@example.com"},"items":[{"sku":"P-1","qty":2},],"total":3980}',
+    placeholder: 'JSONを貼り付け（壊れていても構いません）',
+  },
+};
+
+const toolId = document.body.dataset.tool ?? '';
+const toolPreset = TOOL_PRESETS[toolId];
+
+if (toolPreset) {
+  input.placeholder = toolPreset.placeholder;
+}
+
+// 画像だけのページ（/exif/）では「例を入れる」ボタンを出さない
+if (toolId === 'exif') {
+  $('btnSample').hidden = true;
+}
+
+// 機能別ページでは、その機能の例を最初に出す
+if (toolPreset) {
+  SAMPLES.unshift({ label: toolPreset.label, text: toolPreset.text });
+}
+
 $('btnClear').addEventListener('click', () => {
   input.value = '';
   state.images = [];
@@ -339,9 +383,10 @@ $('helpVersion').textContent = `バージョン v${__APP_VERSION__}`;
 paint();
 
 // Service Worker は本番ビルドのみ（開発サーバーには sw.js が無い）
+// 機能別ページ（/url-encode/ など）からも同じ SW を使うため、ルート絶対で登録する。
 if (import.meta.env.PROD && 'serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
       /* オフライン対応は無くても動く */
     });
   });

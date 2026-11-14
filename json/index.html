@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#001f3f" />
+    <meta name="description" content="JSONを貼ると整形し、構文エラーがあれば何行目の何文字目かとよくある原因を日本語で示します。JSON Lines（1行1JSON）も自動判定。入力はブラウザの外に出ません。" />
+    <link rel="canonical" href="https://fmt.okamomedia.tokyo/json/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="fmt" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:title" content="JSON 整形｜構文エラーの位置と原因を日本語で表示（送信なし）" />
+    <meta property="og:description" content="JSONを貼ると整形し、構文エラーがあれば何行目の何文字目かとよくある原因を日本語で示します。JSON Lines（1行1JSON）も自動判定。入力はブラウザの外に出ません。" />
+    <meta property="og:url" content="https://fmt.okamomedia.tokyo/json/" />
+    <meta property="og:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="JSON 整形｜構文エラーの位置と原因を日本語で表示（送信なし）" />
+    <meta name="twitter:description" content="JSONを貼ると整形し、構文エラーがあれば何行目の何文字目かとよくある原因を日本語で示します。JSON Lines（1行1JSON）も自動判定。入力はブラウザの外に出ません。" />
+    <meta name="twitter:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <title>JSON 整形｜構文エラーの位置と原因を日本語で表示（送信なし） | fmt</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../src/style.css" />
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://fmt.okamomedia.tokyo/json/#app","name":"JSON 整形・構文チェック","url":"https://fmt.okamomedia.tokyo/json/","description":"JSONを貼ると整形し、構文エラーがあれば何行目の何文字目かとよくある原因を日本語で示します。JSON Lines（1行1JSON）も自動判定。入力はブラウザの外に出ません。","applicationCategory":"DeveloperApplication","operatingSystem":"Any (web browser)","browserRequirements":"JavaScript が有効なブラウザ","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},"featureList":["JSONの整形","構文エラーの行・文字位置の表示","よくある原因（末尾カンマ・全角引用符など）の日本語での説明","JSON Lines（1行1JSON）の自動判定と表への整形"],"isPartOf":{"@id":"https://fmt.okamomedia.tokyo/#website"},"publisher":{"@id":"https://fmt.okamomedia.tokyo/#publisher"}},{"@type":"BreadcrumbList","@id":"https://fmt.okamomedia.tokyo/json/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"fmt","item":"https://fmt.okamomedia.tokyo/"},{"@type":"ListItem","position":2,"name":"ツール一覧","item":"https://fmt.okamomedia.tokyo/tools/"},{"@type":"ListItem","position":3,"name":"JSON整形","item":"https://fmt.okamomedia.tokyo/json/"}]},{"@type":"FAQPage","@id":"https://fmt.okamomedia.tokyo/json/#faq","mainEntity":[{"@type":"Question","name":"エラーの場所を教えてくれますか？","acceptedAnswer":{"@type":"Answer","text":"はい。何行目の何文字目かを示し、よくある原因（末尾カンマ、シングルクォート、全角引用符など）を日本語で添えます。"}},{"@type":"Question","name":"JSONをそのままAPIに送れますか？","acceptedAnswer":{"@type":"Answer","text":"このツールは整形と表示までです。整形結果はコピーできますが、送信は行いません（CSPで外部通信を禁止しています）。"}},{"@type":"Question","name":"キーを並べ替えたり、値を変換したりできますか？","acceptedAnswer":{"@type":"Answer","text":"いいえ。整形と構文チェックが目的です。並べ替えやマッピングは行いません。"}},{"@type":"Question","name":"個人情報を含むJSONでも安全ですか？","acceptedAnswer":{"@type":"Answer","text":"入力は送信されず、保存もされません。ただし既定でONのマスキングはメールアドレスなどを伏せて表示するため、値そのものを見たいときはチェックを外してください。"}},{"@type":"Question","name":"JSON LinesはCSVとして表示されますか？","acceptedAnswer":{"@type":"Answer","text":"いいえ。1行1JSONの形を検出してJSON Linesとして扱います。表に整形し、入れ子は「親.子」の列名にします。"}}]}]}</script>  </head>
+  <body class="lp" data-tool="json">
+    <header class="topbar">
+      <a class="brand" href="../">
+        <img src="../favicon.svg" alt="" width="28" height="28" />
+        <span>fmt</span>
+      </a>
+      <span class="badge">通信しません</span>
+      <span class="badge badge-secondary">AIは使っていません</span>
+      <span class="badge badge-optional">オフラインで動きます</span>
+      <span class="tagline">貼るだけで「これ何？」がわかる</span>
+      <div class="spacer"></div>
+      <span class="ver" id="version"></span>
+      <button class="link" id="btnHelp" type="button">使い方と安全性</button>
+    </header>
+<div class="lp-hero">
+        <nav class="lp-crumb" aria-label="パンくず">
+          <a href="../">fmt</a><span aria-hidden="true">›</span><a href="../tools/">ツール一覧</a><span aria-hidden="true">›</span><span>JSON整形</span>
+        </nav>
+        <h1>JSON 整形・構文チェック</h1>
+        <p class="lp-lead">JSONを貼ると整形し、構文エラーがあれば「何行目の何文字目か」「よくある原因」を日本語で示します。エラーメッセージが英語で分かりにくいときにも使えます。</p>
+        <p class="lp-jump"><a href="#guide">このページの解説とよくある質問を読む</a></p>
+      </div>
+
+    
+
+    <main class="layout">
+      <section class="pane pane-input" aria-label="入力">
+        <div class="pane-head">
+          <h2>入力</h2>
+          <div class="pane-tools">
+            <button class="link small" id="btnSample" type="button">例を入れる</button>
+            <button class="link small" id="btnClear" type="button">クリア</button>
+          </div>
+        </div>
+
+        <p class="send-note" role="note">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>
+            <strong>入力した内容は送信されません。</strong>
+            解析はこのブラウザの中だけで完結します（サーバーがありません）。
+          </span>
+        </p>
+
+        <div id="dropzone" class="dropzone">
+          <textarea
+            id="input"
+            spellcheck="false"
+            autocapitalize="off"
+            autocomplete="off"
+            placeholder="ここに貼り付け（Ctrl+V）&#10;&#10;JWT・JSON・XML・CSV・ログ・メールのソース・証明書など、何でも入れてみてください。&#10;画像はここにドラッグ＆ドロップ（複数可）"
+          ></textarea>
+          <div class="drop-hint" aria-hidden="true">画像はここにドラッグ＆ドロップ</div>
+        </div>
+
+        <div class="options">
+          <label class="check">
+            <input type="checkbox" id="optMask" checked />
+            <span>機密情報をマスク</span>
+            <span class="badge-count" id="maskBadge" hidden></span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="optError" checked />
+            <span>エラーの意味を日本語で</span>
+          </label>
+          <div class="spacer"></div>
+          <!-- file input をボタンの上に透明で重ねる。
+               iOS Safari は「非表示の input を JS で click()」を受け付けないため。 -->
+          <label class="btn btn-sub file-btn" id="btnFile">
+            画像を選ぶ
+            <input type="file" id="fileInput" class="file-input" accept="image/*" multiple
+              aria-label="画像を選ぶ" />
+          </label>
+        </div>
+
+        <div id="imageList" class="image-list"></div>
+        <p class="hint-line">
+          スクリーンショットは <kbd>Ctrl</kbd>+<kbd>V</kbd> で貼り付けできます。入力は保存しません（再読み込みで消えます）。
+        </p>
+      </section>
+
+      <section class="pane pane-result" aria-label="結果">
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+        <div id="verdict" class="verdict"></div>
+        <div id="alternates" class="alternates"></div>
+        <div id="output" class="output"></div>
+        <div class="divider"></div>
+        <div id="stats" class="stats-panel"></div>
+        <div id="notes" class="notes"></div>
+      </section>
+    </main>
+
+      <div class="lp-body" id="guide">
+        <section class="lp-section">
+          <h2>JSONでよくあるエラーと直し方</h2>
+
+<table class="lp-table">
+  <thead><tr><th>症状</th><th>原因</th><th>直し方</th></tr></thead>
+  <tbody>
+    <tr><td>Unexpected token }</td><td>末尾のカンマ（ケツカンマ）</td><td><code>[1,2,]</code> → <code>[1,2]</code></td></tr>
+    <tr><td>Unexpected token '</td><td>シングルクォート</td><td><code>'a'</code> → <code>"a"</code></td></tr>
+    <tr><td>Unexpected token あ</td><td>キーや値の引用符がない／全角の「”」</td><td>半角の <code>"</code> に直す</td></tr>
+    <tr><td>Unexpected end of JSON input</td><td>括弧の閉じ忘れ、途中で切れている</td><td><code>{</code> と <code>[</code> の数を数える</td></tr>
+    <tr><td>Unexpected token N</td><td><code>NaN</code> / <code>Infinity</code> / コメント</td><td>JSONに存在しない値。文字列か <code>null</code> にする</td></tr>
+  </tbody>
+</table>
+<p>
+  このツールは、エラー位置を行・文字位置で示し、上の表のような「よくある原因」を日本語で添えます。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>JSONとJavaScriptオブジェクトの違い</h2>
+
+<p>
+  JavaScriptのオブジェクトリテラルはJSONより緩く、シングルクォート・末尾カンマ・コメント・関数・
+  <code>undefined</code> が書けます。JSONはこれらをすべて許しません。
+  「ブラウザのコンソールでは動くのに、JSONとして読むと失敗する」ときは、この差が原因です。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>JSON Lines（1行1JSON）との違い</h2>
+
+<p>
+  JSON Lines（NDJSON）は「1行に1つのJSON」を並べた形式で、ログやストリームで使われます。
+  配列ではないので、そのままではJSONとして読めません。このツールは
+  <code>{…}\n{…}</code> の形を見つけるとJSON Linesとして判定し、表に整形します（CSVとは誤認しません）。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>大きいJSONの扱い</h2>
+
+<p>
+  テキストは4MBまで解析します。超えた場合は先頭4MBだけを対象にし、その旨を結果に明記します。
+  数万行のログを貼る場合は、行を絞るかJSON Linesのまま貼るほうが扱いやすくなります。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>このツールの安全性</h2>
+
+<p>
+  解析はすべて<strong>ブラウザの中</strong>で行います。サーバーが無いので、入力した内容が送られる先がありません。
+  配信側の CSP（Content-Security-Policy）で <code>fetch</code> / <code>XMLHttpRequest</code> / <code>WebSocket</code> /
+  <code>sendBeacon</code> を禁止しており（<code>connect-src 'none'</code>）、ビルド時に
+  <code>scripts/check-no-network.mjs</code> が送信 API の混入を検査しています。
+  入力は保存しません（再読み込みで消えます）。一度読み込めばオフラインでも動きます。
+</p>
+
+
+<p class="lp-muted">
+  このページの判定は決まったルールによるもので、AI（LLM）は使っていません。同じ入力なら同じ結果になります。
+  マスキングには取りこぼしがあります。共有前の目視確認をおすすめします。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>よくある質問</h2>
+          <details class="lp-faq-item">
+            <summary>エラーの場所を教えてくれますか？</summary>
+            <p>はい。何行目の何文字目かを示し、よくある原因（末尾カンマ、シングルクォート、全角引用符など）を日本語で添えます。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>JSONをそのままAPIに送れますか？</summary>
+            <p>このツールは整形と表示までです。整形結果はコピーできますが、送信は行いません（CSPで外部通信を禁止しています）。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>キーを並べ替えたり、値を変換したりできますか？</summary>
+            <p>いいえ。整形と構文チェックが目的です。並べ替えやマッピングは行いません。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>個人情報を含むJSONでも安全ですか？</summary>
+            <p>入力は送信されず、保存もされません。ただし既定でONのマスキングはメールアドレスなどを伏せて表示するため、値そのものを見たいときはチェックを外してください。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>JSON LinesはCSVとして表示されますか？</summary>
+            <p>いいえ。1行1JSONの形を検出してJSON Linesとして扱います。表に整形し、入れ子は「親.子」の列名にします。</p>
+          </details>
+        </section>
+        <section class="lp-section">
+          <h2>関連するツール</h2>
+          <ul class="lp-related">
+          <li><a href="../jwt/">JWT デコード</a> — JWT（JSON Web Token）を貼ると、ヘッダ・Payload・有効期限（exp /…</li>
+          <li><a href="../base64/">Base64エンコード・デコード</a> — テキストをBase64に、Base64をテキストに変換。日本語（UTF-8）対応、URL-s…</li>
+          <li><a href="../url-encode/">URLエンコード・デコード</a> — 日本語やスペースをURLで使える形式（パーセントエンコーディング）に変換・復元。%E3%81…</li>
+            <li><a href="../tools/">ツール一覧（すべて見る）</a></li>
+          </ul>
+        </section>
+
+      <footer class="lp-footer">
+        <p>
+          <a href="../">fmt（トップ）</a> ・
+          <a href="../tools/">ツール一覧</a> ・
+          <a href="https://github.com/okamoto53515606/fmt" rel="noreferrer">ソースコード（MIT）</a>
+        </p>
+        <p class="lp-muted">
+          fmt は「貼るだけで何なのかが分かる」ブラウザ完結のツールです。サーバーを持たず、入力した内容を送信しません。
+          結果は決まったルールで判定しており、AI（LLM）は使っていません。
+        </p>
+      </footer>
+      </div>
+
+    <div id="help" class="modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <button class="modal-close" type="button" aria-label="閉じる">×</button>
+        <h2 id="helpTitle">使い方と安全性</h2>
+
+        <h3>これは何？</h3>
+        <p>
+          意味がわからない文字列やファイルを貼ると、<strong>何なのか・どこが問題なのか</strong>を日本語で説明する道具です。
+          解析はすべてブラウザの中だけで行い、<strong>入力した内容をどこにも送信しません</strong>（サーバーがありません）。
+        </p>
+
+        <h3>できること</h3>
+        <ul>
+          <li>JWT・JSON・XML・HTML・CSV / TSV・ログ・メールのソース・Cookie・URL・証明書 / 鍵 の解析（日時は日本時間、列の多い表は縦横変換）</li>
+          <li>Base64・URL エンコード・16進ダンプ・Unicode エスケープの解除（解除した先も自動で判定します）</li>
+          <li>画像（複数可）の形式・サイズ・EXIF・GPS・QR コード / バーコード</li>
+          <li>エラーの意味（HTTP / SMTP / よくある英語エラー）と、次にやること</li>
+          <li>文字数・行数・バイト数・文字コード・改行・環境依存文字などの統計</li>
+          <li>機密情報のマスク（メール・電話・APIキー・カード番号・AWS アカウントID・2段階認証のシークレットなど）</li>
+        </ul>
+
+        <h3>安全のためにやっていること</h3>
+        <ul>
+          <li>配信元の CSP（Content-Security-Policy）で、fetch / XHR / WebSocket / beacon などの送信路を禁止しています（<code>connect-src 'none'</code>）。ブラウザのページ遷移そのものは CSP では止められません。</li>
+          <li>解析は Web Worker で行い、画面が固まりにくいようにしています。</li>
+          <li>一度読み込むと、オフラインでも動きます（Service Worker）。</li>
+          <li>入力は保存しません。再読み込みすると消えます。</li>
+          <li>AI（LLM）は使っていません。すべて決まったルールで判定します（結果が毎回同じになります）。</li>
+          <li>HTML は「ソース」として表示し、ページとしては表示しません。Markdown 内のスクリプト・外部画像も無効化します。</li>
+        </ul>
+
+        <h3>できないこと（正直な制限）</h3>
+        <ul>
+          <li>暗号化されたデータの中身は読めません（種類の推定まで）。</li>
+          <li>ハッシュ値は「元に戻す」ことはできません。長さからの推定のみです。</li>
+          <li>英語の長文を自然に翻訳することはしません。よくあるエラーの意味を辞書で引く方式です。</li>
+          <li>JWT の署名検証、証明書の失効確認は行いません。</li>
+          <li>マスキングは取りこぼしがあります。共有前の目視確認をおすすめします。</li>
+        </ul>
+
+        <h3>注意</h3>
+        <p>
+          この画面は通信しませんが、<strong>貼り付けた先のサービス（チャット・メール・チケット）には内容が残ります</strong>。
+          秘密鍵やパスワードは、そもそも他人に送らないでください。
+        </p>
+        <p class="muted">オープンソース（MIT）。通信先や保存の有無は誰でも確認できます。</p>
+        <p class="muted" id="helpVersion"></p>
+      </div>
+    </div>
+
+    <noscript>
+      <p class="noscript">このツールはブラウザ内で計算するため、JavaScript が必要です。</p>
+    </noscript>
+
+    <script type="module" src="../src/main.ts"></script>
+  
+  </body>
+</html>

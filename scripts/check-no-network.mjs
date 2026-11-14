@@ -56,17 +56,34 @@ for (const f of files) {
   if (fetches) warnings.push(`${where}: fetch( が ${fetches.length} 箇所（宛先は実行時に決まる。CSP の connect-src 'none' が防ぐ）`);
 }
 
-const html = readFileSync(join(distDir, 'index.html'), 'utf8');
-if (/<script(?![^>]*\bsrc=)[^>]*>/i.test(html)) {
-  problems.push('index.html: インライン <script> があります（CSP と矛盾します）');
+const htmlFiles = files.filter((f) => f.endsWith('.html'));
+if (!htmlFiles.length) problems.push('HTML が 1 つもありません（ビルドに失敗しています）');
+
+for (const f of htmlFiles) {
+  const html = readFileSync(f, 'utf8');
+  const where = relative(distDir, f).split(sep).join('/');
+
+  // インライン script は禁止。ただし JSON-LD（実行されないデータブロック）は除く。
+  const inline = html.match(/<script(?![^>]*\bsrc=)(?![^>]*application\/ld\+json)[^>]*>/gi);
+  if (inline) {
+    problems.push(`${where}: インライン <script> が ${inline.length} 箇所あります（CSP と矛盾します）`);
+  }
+
+  // 実行時に外部へ取りに行く参照（src / link href）が無いこと。
+  // <a href> はクリックするまで通信しないので対象外。
+  for (const m of html.matchAll(/<(link|a|img|script|iframe|source|video|audio)\b[^>]*?\b(?:href|src)="([^"]+)"/gi)) {
+    const tag = m[1].toLowerCase();
+    const ref = m[2];
+    if (!/^(https?:)?\/\//i.test(ref)) continue;
+    if (tag === 'a') continue;
+    if (tag === 'link' && /rel="(canonical|alternate|prev|next)"/i.test(m[0])) continue;
+    problems.push(`${where}: 外部参照があります: ${ref}`);
+  }
 }
-for (const m of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
-  const ref = m[1];
-  if (/^(https?:)?\/\//i.test(ref)) problems.push(`index.html: 外部参照があります: ${ref}`);
-}
-if (!/connect-src/.test(html)) {
+
+if (!/connect-src/.test(readFileSync(join(distDir, 'index.html'), 'utf8'))) {
   // CSP はレスポンスヘッダで付けるため、HTML に無いのは正常。念のため記録だけ。
-  warnings.push('index.html: CSP は CloudFront のレスポンスヘッダで付与します（template.yaml）');
+  warnings.push('CSP は CloudFront のレスポンスヘッダで付与します（template.yaml）');
 }
 
 console.log(`[net] 検査したファイル: ${files.length}`);

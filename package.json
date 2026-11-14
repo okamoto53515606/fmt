@@ -1,21 +1,23 @@
 {
   "name": "fmt",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "description": "貼るだけで「これ何？」がわかる。ブラウザ完結のデコード＆整形ツール",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node scripts/gen-sw.mjs && node scripts/check-no-network.mjs",
+    "build": "node scripts/gen-pages.mjs && tsc --noEmit && vite build && node scripts/gen-sw.mjs && node scripts/check-no-network.mjs",
     "preview": "vite preview --port 4173",
+    "pages": "node scripts/gen-pages.mjs",
     "test": "node scripts/test-rules.mjs",
     "report": "node scripts/gen-report.mjs",
     "og": "node scripts/make-og.mjs",
     "mask:history": "node scripts/mask-history.mjs",
     "check:history": "node scripts/mask-history.mjs --check",
-    "test:samples": "node scripts/check-samples.mjs && node scripts/gen-report.mjs --check",
+    "test:samples": "node scripts/check-samples.mjs && node scripts/gen-report.mjs --check && node scripts/gen-pages.mjs --check",
     "check:samples": "node scripts/check-samples.mjs",
+    "check:pages": "node scripts/gen-pages.mjs --check",
     "check:net": "node scripts/check-no-network.mjs"
   },
   "devDependencies": {

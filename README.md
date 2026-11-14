@@ -111,12 +111,52 @@ cd fmt
 ```bash
 npm install
 npm run dev      # 開発サーバー（http://localhost:5173/）
-npm run build    # 型チェック → dist/ → SW 生成 → 無通信検査
+npm run pages    # 機能別ページを再生成（URLエンコード / Base64 / JWT / JSON / EXIF）
+npm run build    # ページ生成 → 型チェック → dist/ → SW 生成 → 無通信検査
 npm test         # ルールのフィクスチャ検証（ビルド不要）
 npm run report   # docs/report.md（before → after）を再生成
-npm run test:samples  # レポートが最新か ＋ サンプルに秘密が混ざっていないかを検証
+npm run test:samples  # レポートとページが最新か ＋ サンプルに秘密が混ざっていないかを検証
 npm run preview  # ビルド結果の確認
 ```
+
+---
+
+## 機能別ページ（検索・AI 検索向け）
+
+`/` は「何でも貼れる」入口ですが、それだけだと「URLエンコード」のような
+**機能名での検索に URL が対応しません**。そこで機能ごとのページを持たせています。
+
+| ページ | URL |
+|---|---|
+| ツール一覧 | `/tools/` |
+| URLエンコード・デコード | `/url-encode/` |
+| Base64エンコード・デコード | `/base64/` |
+| JWT デコード | `/jwt/` |
+| JSON 整形・構文チェック | `/json/` |
+| 写真のEXIF・GPS確認 | `/exif/` |
+
+これらは `scripts/tool-pages.mjs`（文章）と `scripts/gen-pages.mjs`（組み立て）から
+**静的な HTML として生成**し、リポジトリにコミットしています。理由は 2 つです。
+
+1. 1 クエリ = 1 URL にするため（検索結果で機能名のページとして出る）
+2. **JavaScript を実行しないクローラにも本文が読めるようにするため**
+   （AI 検索のクローラは多くが JS を実行しません）
+
+生成物は `index.html` の `<body>` を雛形にしているため、アプリ本体の HTML を
+二重に持たずに済みます。ホームのヒーローは `<!-- hero:start -->` で囲ってあり、
+機能別ページではそこを差し替えます。
+
+- 文章を直したら `npm run pages`（`npm run test:samples` が最新かを検査します）
+- ページを増やすときは `scripts/tool-pages.mjs` に 1 件足し、`vite.config.ts` の
+  `rollupOptions.input` と `scripts/deploy.sh` の `SITE_PAGES` に同じ slug を足す
+- 各ページに **固有の解説・表・FAQ** を必ず書く（テンプレの量産は薄いページになるため）
+- 構造化データは `WebApplication` / `BreadcrumbList` / `FAQPage`（FAQ は
+  リッチリザルトではなく、AI が回答に使える形として置いています）
+- `public/robots.txt` / `public/sitemap.xml` / `public/llms.txt` も同じスクリプトが生成
+
+配信側では、S3 はディレクトリの index を解決しないため、CloudFront Function
+（`template.yaml` の `SiteRewriteFunction`）で `/url-encode/` → `/url-encode/index.html`
+に書き換えています。存在しないパスは `CustomErrorResponses` で `/404.html` を返します。
 
 ---
 

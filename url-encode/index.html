@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#001f3f" />
+    <meta name="description" content="日本語やスペースをURLで使える形式（パーセントエンコーディング）に変換・復元。%E3%81%82 のような文字列を読める文字に戻します。二重エンコードも解除。入力はブラウザの外に出ません。" />
+    <link rel="canonical" href="https://fmt.okamomedia.tokyo/url-encode/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="fmt" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:title" content="URLエンコード・デコード｜日本語をパーセントエンコーディングに変換" />
+    <meta property="og:description" content="日本語やスペースをURLで使える形式（パーセントエンコーディング）に変換・復元。%E3%81%82 のような文字列を読める文字に戻します。二重エンコードも解除。入力はブラウザの外に出ません。" />
+    <meta property="og:url" content="https://fmt.okamomedia.tokyo/url-encode/" />
+    <meta property="og:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="URLエンコード・デコード｜日本語をパーセントエンコーディングに変換" />
+    <meta name="twitter:description" content="日本語やスペースをURLで使える形式（パーセントエンコーディング）に変換・復元。%E3%81%82 のような文字列を読める文字に戻します。二重エンコードも解除。入力はブラウザの外に出ません。" />
+    <meta name="twitter:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <title>URLエンコード・デコード｜日本語をパーセントエンコーディングに変換 | fmt</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../src/style.css" />
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://fmt.okamomedia.tokyo/url-encode/#app","name":"URLエンコード・デコード","url":"https://fmt.okamomedia.tokyo/url-encode/","description":"日本語やスペースをURLで使える形式（パーセントエンコーディング）に変換・復元。%E3%81%82 のような文字列を読める文字に戻します。二重エンコードも解除。入力はブラウザの外に出ません。","applicationCategory":"DeveloperApplication","operatingSystem":"Any (web browser)","browserRequirements":"JavaScript が有効なブラウザ","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},"featureList":["パーセントエンコーディングへの変換と復元","二重エンコードの解除","URLのホスト・パス・クエリへの分解","追跡用パラメータ（utm_* など）の指摘","文字化けの判定と復元"],"isPartOf":{"@id":"https://fmt.okamomedia.tokyo/#website"},"publisher":{"@id":"https://fmt.okamomedia.tokyo/#publisher"}},{"@type":"BreadcrumbList","@id":"https://fmt.okamomedia.tokyo/url-encode/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"fmt","item":"https://fmt.okamomedia.tokyo/"},{"@type":"ListItem","position":2,"name":"ツール一覧","item":"https://fmt.okamomedia.tokyo/tools/"},{"@type":"ListItem","position":3,"name":"URLエンコード","item":"https://fmt.okamomedia.tokyo/url-encode/"}]},{"@type":"FAQPage","@id":"https://fmt.okamomedia.tokyo/url-encode/#faq","mainEntity":[{"@type":"Question","name":"%E3%81%82 は何と読みますか？","acceptedAnswer":{"@type":"Answer","text":"「あ」です。UTF-8では「あ」が E3 81 82 の3バイトなので、1バイトずつ %＋16進にしたものが %E3%81%82 になります。"}},{"@type":"Question","name":"「+」は空白ですか？","acceptedAnswer":{"@type":"Answer","text":"フォーム送信（application/x-www-form-urlencoded）では + は空白を表します。一方URLのパス部分では + は文字そのものです。どちらの文脈かで意味が変わります。"}},{"@type":"Question","name":"エンコードしたのに、ブラウザのアドレスバーでは日本語のままに見えます","acceptedAnswer":{"@type":"Answer","text":"ブラウザは表示用にデコードして見せているだけで、内部ではエンコードされた形で送っています。コピーしてメモ帳などに貼ると %E3… の形を確認できます。"}},{"@type":"Question","name":"入力したURLはどこかに送信されますか？","acceptedAnswer":{"@type":"Answer","text":"いいえ。解析はブラウザ内のWeb Workerで完結し、CSPで外部通信を禁止しています。サーバーが無いため、送る先そのものがありません。"}},{"@type":"Question","name":"Shift_JISのURLも復元できますか？","acceptedAnswer":{"@type":"Answer","text":"文字コードの情報が文字列に含まれていないため、UTF-8以外で作られた文字列は化けることがあります。化けた場合は「文字化け」として判定し、復元できる型かどうかを表示します。"}}]}]}</script>  </head>
+  <body class="lp" data-tool="url-encode">
+    <header class="topbar">
+      <a class="brand" href="../">
+        <img src="../favicon.svg" alt="" width="28" height="28" />
+        <span>fmt</span>
+      </a>
+      <span class="badge">通信しません</span>
+      <span class="badge badge-secondary">AIは使っていません</span>
+      <span class="badge badge-optional">オフラインで動きます</span>
+      <span class="tagline">貼るだけで「これ何？」がわかる</span>
+      <div class="spacer"></div>
+      <span class="ver" id="version"></span>
+      <button class="link" id="btnHelp" type="button">使い方と安全性</button>
+    </header>
+<div class="lp-hero">
+        <nav class="lp-crumb" aria-label="パンくず">
+          <a href="../">fmt</a><span aria-hidden="true">›</span><a href="../tools/">ツール一覧</a><span aria-hidden="true">›</span><span>URLエンコード</span>
+        </nav>
+        <h1>URLエンコード・デコード</h1>
+        <p class="lp-lead">URLエンコード（パーセントエンコーディング）は、日本語やスペースなどURLに直接書けない文字を「%」＋16進数に置き換える仕組みです。このページでは変換と復元の両方を、ブラウザの中だけで行えます。</p>
+        <p class="lp-jump"><a href="#guide">このページの解説とよくある質問を読む</a></p>
+      </div>
+
+    
+
+    <main class="layout">
+      <section class="pane pane-input" aria-label="入力">
+        <div class="pane-head">
+          <h2>入力</h2>
+          <div class="pane-tools">
+            <button class="link small" id="btnSample" type="button">例を入れる</button>
+            <button class="link small" id="btnClear" type="button">クリア</button>
+          </div>
+        </div>
+
+        <p class="send-note" role="note">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>
+            <strong>入力した内容は送信されません。</strong>
+            解析はこのブラウザの中だけで完結します（サーバーがありません）。
+          </span>
+        </p>
+
+        <div id="dropzone" class="dropzone">
+          <textarea
+            id="input"
+            spellcheck="false"
+            autocapitalize="off"
+            autocomplete="off"
+            placeholder="ここに貼り付け（Ctrl+V）&#10;&#10;JWT・JSON・XML・CSV・ログ・メールのソース・証明書など、何でも入れてみてください。&#10;画像はここにドラッグ＆ドロップ（複数可）"
+          ></textarea>
+          <div class="drop-hint" aria-hidden="true">画像はここにドラッグ＆ドロップ</div>
+        </div>
+
+        <div class="options">
+          <label class="check">
+            <input type="checkbox" id="optMask" checked />
+            <span>機密情報をマスク</span>
+            <span class="badge-count" id="maskBadge" hidden></span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="optError" checked />
+            <span>エラーの意味を日本語で</span>
+          </label>
+          <div class="spacer"></div>
+          <!-- file input をボタンの上に透明で重ねる。
+               iOS Safari は「非表示の input を JS で click()」を受け付けないため。 -->
+          <label class="btn btn-sub file-btn" id="btnFile">
+            画像を選ぶ
+            <input type="file" id="fileInput" class="file-input" accept="image/*" multiple
+              aria-label="画像を選ぶ" />
+          </label>
+        </div>
+
+        <div id="imageList" class="image-list"></div>
+        <p class="hint-line">
+          スクリーンショットは <kbd>Ctrl</kbd>+<kbd>V</kbd> で貼り付けできます。入力は保存しません（再読み込みで消えます）。
+        </p>
+      </section>
+
+      <section class="pane pane-result" aria-label="結果">
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+        <div id="verdict" class="verdict"></div>
+        <div id="alternates" class="alternates"></div>
+        <div id="output" class="output"></div>
+        <div class="divider"></div>
+        <div id="stats" class="stats-panel"></div>
+        <div id="notes" class="notes"></div>
+      </section>
+    </main>
+
+      <div class="lp-body" id="guide">
+        <section class="lp-section">
+          <h2>URLエンコードとは</h2>
+
+<p>
+  URLに使える文字はRFC 3986で決まっています。日本語やスペースはそのままでは置けません。
+  UTF-8のバイト列に分解し、1バイトずつ <code>%</code> ＋16進2桁に置き換えるのがパーセントエンコーディングです。
+</p>
+<table class="lp-table">
+  <caption>変換の例（UTF-8）</caption>
+  <thead><tr><th>元の文字</th><th>UTF-8 のバイト</th><th>エンコード後</th></tr></thead>
+  <tbody>
+    <tr><td>あ</td><td>E3 81 82</td><td><code>%E3%81%82</code></td></tr>
+    <tr><td>東</td><td>E6 9D B1</td><td><code>%E6%9D%B1</code></td></tr>
+    <tr><td>空白</td><td>20</td><td><code>%20</code>（フォーム送信では <code>+</code> のことも）</td></tr>
+    <tr><td>/</td><td>2F</td><td><code>%2F</code></td></tr>
+    <tr><td>&amp;</td><td>26</td><td><code>%26</code></td></tr>
+  </tbody>
+</table>
+<p>
+  英数字と <code>-</code> <code>.</code> <code>_</code> <code>~</code> は変換されません（unreserved characters）。
+  それ以外は、たとえ <code>/</code> のような記号でも「区切りとしての意味を消したいとき」はエンコードします。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>二重エンコードに注意</h2>
+
+<p>
+  <code>%E3%81%82</code> をもう一度エンコードすると、<code>%</code> 自身が <code>%25</code> になって
+  <code>%25E3%2581%2582</code> になります。検索結果やリダイレクトURLで「日本語にならない」ときは、
+  ほぼこれが原因です。このツールは <code>%25</code> を見つけると、もう一段デコードして結果を出します。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>このツールでできること</h2>
+
+<ul>
+  <li>エンコード済みの文字列を貼ると、自動で判定して復元します（判定の根拠も表示します）</li>
+  <li>URL全体を貼ると、ホスト・パス・クエリに分解し、パラメータの値だけをデコードします</li>
+  <li>追跡用パラメータ（<code>utm_*</code>、<code>gclid</code> など）を見つけて指摘します</li>
+  <li>解除した先がJSONやJWTだった場合は、続けてその形式として解析します</li>
+</ul>
+
+        </section>
+        <section class="lp-section">
+          <h2>復元できないことがある文字列</h2>
+
+<p>
+  パーセントエンコーディングは文字コードを指定しません。<code>%93%FA</code> のようにShift_JISで作られた文字列は、
+  UTF-8として読むと化けます。このツールは化けた結果を「文字化け」として判定し、復元できる型かどうかを示します。
+  復元できる場合（UTF-8をShift_JISとして誤読した等）は元の文字に戻します。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>このツールの安全性</h2>
+
+<p>
+  解析はすべて<strong>ブラウザの中</strong>で行います。サーバーが無いので、入力した内容が送られる先がありません。
+  配信側の CSP（Content-Security-Policy）で <code>fetch</code> / <code>XMLHttpRequest</code> / <code>WebSocket</code> /
+  <code>sendBeacon</code> を禁止しており（<code>connect-src 'none'</code>）、ビルド時に
+  <code>scripts/check-no-network.mjs</code> が送信 API の混入を検査しています。
+  入力は保存しません（再読み込みで消えます）。一度読み込めばオフラインでも動きます。
+</p>
+
+
+<p class="lp-muted">
+  このページの判定は決まったルールによるもので、AI（LLM）は使っていません。同じ入力なら同じ結果になります。
+  マスキングには取りこぼしがあります。共有前の目視確認をおすすめします。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>よくある質問</h2>
+          <details class="lp-faq-item">
+            <summary>%E3%81%82 は何と読みますか？</summary>
+            <p>「あ」です。UTF-8では「あ」が E3 81 82 の3バイトなので、1バイトずつ %＋16進にしたものが %E3%81%82 になります。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>「+」は空白ですか？</summary>
+            <p>フォーム送信（application/x-www-form-urlencoded）では + は空白を表します。一方URLのパス部分では + は文字そのものです。どちらの文脈かで意味が変わります。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>エンコードしたのに、ブラウザのアドレスバーでは日本語のままに見えます</summary>
+            <p>ブラウザは表示用にデコードして見せているだけで、内部ではエンコードされた形で送っています。コピーしてメモ帳などに貼ると %E3… の形を確認できます。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>入力したURLはどこかに送信されますか？</summary>
+            <p>いいえ。解析はブラウザ内のWeb Workerで完結し、CSPで外部通信を禁止しています。サーバーが無いため、送る先そのものがありません。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>Shift_JISのURLも復元できますか？</summary>
+            <p>文字コードの情報が文字列に含まれていないため、UTF-8以外で作られた文字列は化けることがあります。化けた場合は「文字化け」として判定し、復元できる型かどうかを表示します。</p>
+          </details>
+        </section>
+        <section class="lp-section">
+          <h2>関連するツール</h2>
+          <ul class="lp-related">
+          <li><a href="../base64/">Base64エンコード・デコード</a> — テキストをBase64に、Base64をテキストに変換。日本語（UTF-8）対応、URL-s…</li>
+          <li><a href="../jwt/">JWT デコード</a> — JWT（JSON Web Token）を貼ると、ヘッダ・Payload・有効期限（exp /…</li>
+          <li><a href="../json/">JSON 整形・構文チェック</a> — JSONを貼ると整形し、構文エラーがあれば何行目の何文字目かとよくある原因を日本語で示します…</li>
+            <li><a href="../tools/">ツール一覧（すべて見る）</a></li>
+          </ul>
+        </section>
+
+      <footer class="lp-footer">
+        <p>
+          <a href="../">fmt（トップ）</a> ・
+          <a href="../tools/">ツール一覧</a> ・
+          <a href="https://github.com/okamoto53515606/fmt" rel="noreferrer">ソースコード（MIT）</a>
+        </p>
+        <p class="lp-muted">
+          fmt は「貼るだけで何なのかが分かる」ブラウザ完結のツールです。サーバーを持たず、入力した内容を送信しません。
+          結果は決まったルールで判定しており、AI（LLM）は使っていません。
+        </p>
+      </footer>
+      </div>
+
+    <div id="help" class="modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <button class="modal-close" type="button" aria-label="閉じる">×</button>
+        <h2 id="helpTitle">使い方と安全性</h2>
+
+        <h3>これは何？</h3>
+        <p>
+          意味がわからない文字列やファイルを貼ると、<strong>何なのか・どこが問題なのか</strong>を日本語で説明する道具です。
+          解析はすべてブラウザの中だけで行い、<strong>入力した内容をどこにも送信しません</strong>（サーバーがありません）。
+        </p>
+
+        <h3>できること</h3>
+        <ul>
+          <li>JWT・JSON・XML・HTML・CSV / TSV・ログ・メールのソース・Cookie・URL・証明書 / 鍵 の解析（日時は日本時間、列の多い表は縦横変換）</li>
+          <li>Base64・URL エンコード・16進ダンプ・Unicode エスケープの解除（解除した先も自動で判定します）</li>
+          <li>画像（複数可）の形式・サイズ・EXIF・GPS・QR コード / バーコード</li>
+          <li>エラーの意味（HTTP / SMTP / よくある英語エラー）と、次にやること</li>
+          <li>文字数・行数・バイト数・文字コード・改行・環境依存文字などの統計</li>
+          <li>機密情報のマスク（メール・電話・APIキー・カード番号・AWS アカウントID・2段階認証のシークレットなど）</li>
+        </ul>
+
+        <h3>安全のためにやっていること</h3>
+        <ul>
+          <li>配信元の CSP（Content-Security-Policy）で、fetch / XHR / WebSocket / beacon などの送信路を禁止しています（<code>connect-src 'none'</code>）。ブラウザのページ遷移そのものは CSP では止められません。</li>
+          <li>解析は Web Worker で行い、画面が固まりにくいようにしています。</li>
+          <li>一度読み込むと、オフラインでも動きます（Service Worker）。</li>
+          <li>入力は保存しません。再読み込みすると消えます。</li>
+          <li>AI（LLM）は使っていません。すべて決まったルールで判定します（結果が毎回同じになります）。</li>
+          <li>HTML は「ソース」として表示し、ページとしては表示しません。Markdown 内のスクリプト・外部画像も無効化します。</li>
+        </ul>
+
+        <h3>できないこと（正直な制限）</h3>
+        <ul>
+          <li>暗号化されたデータの中身は読めません（種類の推定まで）。</li>
+          <li>ハッシュ値は「元に戻す」ことはできません。長さからの推定のみです。</li>
+          <li>英語の長文を自然に翻訳することはしません。よくあるエラーの意味を辞書で引く方式です。</li>
+          <li>JWT の署名検証、証明書の失効確認は行いません。</li>
+          <li>マスキングは取りこぼしがあります。共有前の目視確認をおすすめします。</li>
+        </ul>
+
+        <h3>注意</h3>
+        <p>
+          この画面は通信しませんが、<strong>貼り付けた先のサービス（チャット・メール・チケット）には内容が残ります</strong>。
+          秘密鍵やパスワードは、そもそも他人に送らないでください。
+        </p>
+        <p class="muted">オープンソース（MIT）。通信先や保存の有無は誰でも確認できます。</p>
+        <p class="muted" id="helpVersion"></p>
+      </div>
+    </div>
+
+    <noscript>
+      <p class="noscript">このツールはブラウザ内で計算するため、JavaScript が必要です。</p>
+    </noscript>
+
+    <script type="module" src="../src/main.ts"></script>
+  
+  </body>
+</html>

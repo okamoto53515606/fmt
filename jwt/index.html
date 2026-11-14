@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#001f3f" />
+    <meta name="description" content="JWT（JSON Web Token）を貼ると、ヘッダ・Payload・有効期限（exp / iat / nbf）を日本時間で表示します。期限切れは警告。署名の検証は行いません。トークンは送信しません。" />
+    <link rel="canonical" href="https://fmt.okamomedia.tokyo/jwt/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="fmt" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:title" content="JWT デコード｜ヘッダ・Payload・有効期限を日本時間で確認" />
+    <meta property="og:description" content="JWT（JSON Web Token）を貼ると、ヘッダ・Payload・有効期限（exp / iat / nbf）を日本時間で表示します。期限切れは警告。署名の検証は行いません。トークンは送信しません。" />
+    <meta property="og:url" content="https://fmt.okamomedia.tokyo/jwt/" />
+    <meta property="og:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="JWT デコード｜ヘッダ・Payload・有効期限を日本時間で確認" />
+    <meta name="twitter:description" content="JWT（JSON Web Token）を貼ると、ヘッダ・Payload・有効期限（exp / iat / nbf）を日本時間で表示します。期限切れは警告。署名の検証は行いません。トークンは送信しません。" />
+    <meta name="twitter:image" content="https://fmt.okamomedia.tokyo/og.png" />
+    <title>JWT デコード｜ヘッダ・Payload・有効期限を日本時間で確認 | fmt</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../src/style.css" />
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://fmt.okamomedia.tokyo/jwt/#app","name":"JWT デコード","url":"https://fmt.okamomedia.tokyo/jwt/","description":"JWT（JSON Web Token）を貼ると、ヘッダ・Payload・有効期限（exp / iat / nbf）を日本時間で表示します。期限切れは警告。署名の検証は行いません。トークンは送信しません。","applicationCategory":"DeveloperApplication","operatingSystem":"Any (web browser)","browserRequirements":"JavaScript が有効なブラウザ","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},"featureList":["JWTのヘッダ・Payloadの表示","有効期限（exp）の日本時間への変換と期限切れの指摘","exp がミリ秒になっている場合の指摘","Payload内の機密情報のマスキング"],"isPartOf":{"@id":"https://fmt.okamomedia.tokyo/#website"},"publisher":{"@id":"https://fmt.okamomedia.tokyo/#publisher"}},{"@type":"BreadcrumbList","@id":"https://fmt.okamomedia.tokyo/jwt/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"fmt","item":"https://fmt.okamomedia.tokyo/"},{"@type":"ListItem","position":2,"name":"ツール一覧","item":"https://fmt.okamomedia.tokyo/tools/"},{"@type":"ListItem","position":3,"name":"JWT","item":"https://fmt.okamomedia.tokyo/jwt/"}]},{"@type":"FAQPage","@id":"https://fmt.okamomedia.tokyo/jwt/#faq","mainEntity":[{"@type":"Question","name":"署名鍵なしでデコードできますか？","acceptedAnswer":{"@type":"Answer","text":"できます。HeaderとPayloadはBase64URLでエンコードされているだけで、鍵は不要です。ただし署名が正しいかどうかは分かりません。"}},{"@type":"Question","name":"期限切れかどうかを判定してくれますか？","acceptedAnswer":{"@type":"Answer","text":"はい。exp と現在時刻を比べ、期限切れなら警告を出します。exp が13桁（ミリ秒）になっている場合も指摘します。"}},{"@type":"Question","name":"JWTをオンラインのデコードサービスに貼っても大丈夫ですか？","acceptedAnswer":{"@type":"Answer","text":"トークンはパスワードに相当する認証情報です。サーバーに送られるサービスに貼ると、そのサービスと経路にトークンが残ります。このツールは送信せず、ブラウザ内で完結します。"}},{"@type":"Question","name":"alg: none のトークンは危険ですか？","acceptedAnswer":{"@type":"Answer","text":"署名なしを意味するため、検証側が alg を信頼していると改ざんを受け入れます。受け入れるアルゴリズムをサーバー側で固定してください。"}},{"@type":"Question","name":"JWTの中に個人情報が入っていても大丈夫ですか？","acceptedAnswer":{"@type":"Answer","text":"Payloadは暗号化されておらず、誰でも読めます。個人情報や秘密を入れず、必要な識別子だけを持たせるのが原則です。"}}]}]}</script>  </head>
+  <body class="lp" data-tool="jwt">
+    <header class="topbar">
+      <a class="brand" href="../">
+        <img src="../favicon.svg" alt="" width="28" height="28" />
+        <span>fmt</span>
+      </a>
+      <span class="badge">通信しません</span>
+      <span class="badge badge-secondary">AIは使っていません</span>
+      <span class="badge badge-optional">オフラインで動きます</span>
+      <span class="tagline">貼るだけで「これ何？」がわかる</span>
+      <div class="spacer"></div>
+      <span class="ver" id="version"></span>
+      <button class="link" id="btnHelp" type="button">使い方と安全性</button>
+    </header>
+<div class="lp-hero">
+        <nav class="lp-crumb" aria-label="パンくず">
+          <a href="../">fmt</a><span aria-hidden="true">›</span><a href="../tools/">ツール一覧</a><span aria-hidden="true">›</span><span>JWT</span>
+        </nav>
+        <h1>JWT デコード</h1>
+        <p class="lp-lead">JWT（JSON Web Token）は「ヘッダ.ペイロード.署名」の3つをドットでつないだ文字列です。貼り付けると中身と有効期限（exp）を日本時間で表示します。署名の検証は行いません。</p>
+        <p class="lp-jump"><a href="#guide">このページの解説とよくある質問を読む</a></p>
+      </div>
+
+    
+
+    <main class="layout">
+      <section class="pane pane-input" aria-label="入力">
+        <div class="pane-head">
+          <h2>入力</h2>
+          <div class="pane-tools">
+            <button class="link small" id="btnSample" type="button">例を入れる</button>
+            <button class="link small" id="btnClear" type="button">クリア</button>
+          </div>
+        </div>
+
+        <p class="send-note" role="note">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>
+            <strong>入力した内容は送信されません。</strong>
+            解析はこのブラウザの中だけで完結します（サーバーがありません）。
+          </span>
+        </p>
+
+        <div id="dropzone" class="dropzone">
+          <textarea
+            id="input"
+            spellcheck="false"
+            autocapitalize="off"
+            autocomplete="off"
+            placeholder="ここに貼り付け（Ctrl+V）&#10;&#10;JWT・JSON・XML・CSV・ログ・メールのソース・証明書など、何でも入れてみてください。&#10;画像はここにドラッグ＆ドロップ（複数可）"
+          ></textarea>
+          <div class="drop-hint" aria-hidden="true">画像はここにドラッグ＆ドロップ</div>
+        </div>
+
+        <div class="options">
+          <label class="check">
+            <input type="checkbox" id="optMask" checked />
+            <span>機密情報をマスク</span>
+            <span class="badge-count" id="maskBadge" hidden></span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="optError" checked />
+            <span>エラーの意味を日本語で</span>
+          </label>
+          <div class="spacer"></div>
+          <!-- file input をボタンの上に透明で重ねる。
+               iOS Safari は「非表示の input を JS で click()」を受け付けないため。 -->
+          <label class="btn btn-sub file-btn" id="btnFile">
+            画像を選ぶ
+            <input type="file" id="fileInput" class="file-input" accept="image/*" multiple
+              aria-label="画像を選ぶ" />
+          </label>
+        </div>
+
+        <div id="imageList" class="image-list"></div>
+        <p class="hint-line">
+          スクリーンショットは <kbd>Ctrl</kbd>+<kbd>V</kbd> で貼り付けできます。入力は保存しません（再読み込みで消えます）。
+        </p>
+      </section>
+
+      <section class="pane pane-result" aria-label="結果">
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+        <div id="verdict" class="verdict"></div>
+        <div id="alternates" class="alternates"></div>
+        <div id="output" class="output"></div>
+        <div class="divider"></div>
+        <div id="stats" class="stats-panel"></div>
+        <div id="notes" class="notes"></div>
+      </section>
+    </main>
+
+      <div class="lp-body" id="guide">
+        <section class="lp-section">
+          <h2>JWTの構造</h2>
+
+<p>
+  <code>xxxxx.yyyyy.zzzzz</code> のように、ドットで区切られた3つの部分からできています。
+  前の2つは<strong>Base64URL</strong>でエンコードされたJSONです（暗号化ではありません。誰でも読めます）。
+</p>
+<table class="lp-table">
+  <thead><tr><th>部分</th><th>中身</th><th>例</th></tr></thead>
+  <tbody>
+    <tr><td>Header</td><td>署名アルゴリズムとトークンの種類</td><td><code>{"alg":"HS256","typ":"JWT"}</code></td></tr>
+    <tr><td>Payload</td><td>クレーム（利用者ID・期限・発行者など）</td><td><code>{"sub":"123","exp":1700000000}</code></td></tr>
+    <tr><td>Signature</td><td>ヘッダとPayloadに対する署名</td><td>バイナリ（Base64URL）</td></tr>
+  </tbody>
+</table>
+
+        </section>
+        <section class="lp-section">
+          <h2>よく使うクレームと時刻の読み方</h2>
+
+<table class="lp-table">
+  <thead><tr><th>クレーム</th><th>意味</th><th>注意</th></tr></thead>
+  <tbody>
+    <tr><td><code>exp</code></td><td>有効期限</td><td>UNIX時刻の<strong>秒</strong>。10桁なら秒、13桁ならミリ秒</td></tr>
+    <tr><td><code>iat</code></td><td>発行時刻</td><td>同上</td></tr>
+    <tr><td><code>nbf</code></td><td>この時刻より前は無効</td><td>同上</td></tr>
+    <tr><td><code>iss</code> / <code>aud</code></td><td>発行者 / 対象</td><td>取り違えると別サービスのトークンを受け入れてしまう</td></tr>
+    <tr><td><code>sub</code></td><td>利用者の識別子</td><td>メールアドレスが入っていることもある</td></tr>
+  </tbody>
+</table>
+<p>
+  <code>exp</code> を<strong>ミリ秒</strong>で入れてしまう実装ミスはよくあります。10桁なら秒、13桁ならミリ秒です。
+  このツールは日本時間に直し、現在時刻と比べて期限切れかどうかを表示します。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>「デコード」と「検証」は別物</h2>
+
+<p>
+  デコードは中身を読むだけ、検証は<strong>署名が正しいか</strong>を確かめることです。デコードだけでは改ざんを検出できません。
+  このツールはデコードのみで、署名の検証は行いません（鍵を預かる必要があり、ブラウザ内で鍵を扱う設計にしていないため）。
+  本番の検証は、必ずサーバー側で、鍵やJWKSを使って行ってください。
+</p>
+<p>
+  なお、JWTは<strong>それ自体が認証情報</strong>です。パスワードと同じ扱いで、外部のサービスに貼るのは避けてください。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>このツールでできること</h2>
+
+<ul>
+  <li>ヘッダ・Payloadを整形して表示し、有効期限を日本時間と「あと何日」で示します</li>
+  <li>期限切れ・<code>nbf</code> 前・<code>exp</code> がミリ秒、といった不自然な値を指摘します</li>
+  <li>PayloadにメールアドレスやAPIキーらしき値があれば、マスクして表示します（既定ON）</li>
+  <li>署名部分は中身を出しません（長さと方式のみ）</li>
+</ul>
+
+        </section>
+        <section class="lp-section">
+          <h2>このツールの安全性</h2>
+
+<p>
+  解析はすべて<strong>ブラウザの中</strong>で行います。サーバーが無いので、入力した内容が送られる先がありません。
+  配信側の CSP（Content-Security-Policy）で <code>fetch</code> / <code>XMLHttpRequest</code> / <code>WebSocket</code> /
+  <code>sendBeacon</code> を禁止しており（<code>connect-src 'none'</code>）、ビルド時に
+  <code>scripts/check-no-network.mjs</code> が送信 API の混入を検査しています。
+  入力は保存しません（再読み込みで消えます）。一度読み込めばオフラインでも動きます。
+</p>
+
+
+<p class="lp-muted">
+  このページの判定は決まったルールによるもので、AI（LLM）は使っていません。同じ入力なら同じ結果になります。
+  マスキングには取りこぼしがあります。共有前の目視確認をおすすめします。
+</p>
+
+        </section>
+        <section class="lp-section">
+          <h2>よくある質問</h2>
+          <details class="lp-faq-item">
+            <summary>署名鍵なしでデコードできますか？</summary>
+            <p>できます。HeaderとPayloadはBase64URLでエンコードされているだけで、鍵は不要です。ただし署名が正しいかどうかは分かりません。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>期限切れかどうかを判定してくれますか？</summary>
+            <p>はい。exp と現在時刻を比べ、期限切れなら警告を出します。exp が13桁（ミリ秒）になっている場合も指摘します。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>JWTをオンラインのデコードサービスに貼っても大丈夫ですか？</summary>
+            <p>トークンはパスワードに相当する認証情報です。サーバーに送られるサービスに貼ると、そのサービスと経路にトークンが残ります。このツールは送信せず、ブラウザ内で完結します。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>alg: none のトークンは危険ですか？</summary>
+            <p>署名なしを意味するため、検証側が alg を信頼していると改ざんを受け入れます。受け入れるアルゴリズムをサーバー側で固定してください。</p>
+          </details>
+          <details class="lp-faq-item">
+            <summary>JWTの中に個人情報が入っていても大丈夫ですか？</summary>
+            <p>Payloadは暗号化されておらず、誰でも読めます。個人情報や秘密を入れず、必要な識別子だけを持たせるのが原則です。</p>
+          </details>
+        </section>
+        <section class="lp-section">
+          <h2>関連するツール</h2>
+          <ul class="lp-related">
+          <li><a href="../base64/">Base64エンコード・デコード</a> — テキストをBase64に、Base64をテキストに変換。日本語（UTF-8）対応、URL-s…</li>
+          <li><a href="../json/">JSON 整形・構文チェック</a> — JSONを貼ると整形し、構文エラーがあれば何行目の何文字目かとよくある原因を日本語で示します…</li>
+          <li><a href="../url-encode/">URLエンコード・デコード</a> — 日本語やスペースをURLで使える形式（パーセントエンコーディング）に変換・復元。%E3%81…</li>
+            <li><a href="../tools/">ツール一覧（すべて見る）</a></li>
+          </ul>
+        </section>
+
+      <footer class="lp-footer">
+        <p>
+          <a href="../">fmt（トップ）</a> ・
+          <a href="../tools/">ツール一覧</a> ・
+          <a href="https://github.com/okamoto53515606/fmt" rel="noreferrer">ソースコード（MIT）</a>
+        </p>
+        <p class="lp-muted">
+          fmt は「貼るだけで何なのかが分かる」ブラウザ完結のツールです。サーバーを持たず、入力した内容を送信しません。
+          結果は決まったルールで判定しており、AI（LLM）は使っていません。
+        </p>
+      </footer>
+      </div>
+
+    <div id="help" class="modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <button class="modal-close" type="button" aria-label="閉じる">×</button>
+        <h2 id="helpTitle">使い方と安全性</h2>
+
+        <h3>これは何？</h3>
+        <p>
+          意味がわからない文字列やファイルを貼ると、<strong>何なのか・どこが問題なのか</strong>を日本語で説明する道具です。
+          解析はすべてブラウザの中だけで行い、<strong>入力した内容をどこにも送信しません</strong>（サーバーがありません）。
+        </p>
+
+        <h3>できること</h3>
+        <ul>
+          <li>JWT・JSON・XML・HTML・CSV / TSV・ログ・メールのソース・Cookie・URL・証明書 / 鍵 の解析（日時は日本時間、列の多い表は縦横変換）</li>
+          <li>Base64・URL エンコード・16進ダンプ・Unicode エスケープの解除（解除した先も自動で判定します）</li>
+          <li>画像（複数可）の形式・サイズ・EXIF・GPS・QR コード / バーコード</li>
+          <li>エラーの意味（HTTP / SMTP / よくある英語エラー）と、次にやること</li>
+          <li>文字数・行数・バイト数・文字コード・改行・環境依存文字などの統計</li>
+          <li>機密情報のマスク（メール・電話・APIキー・カード番号・AWS アカウントID・2段階認証のシークレットなど）</li>
+        </ul>
+
+        <h3>安全のためにやっていること</h3>
+        <ul>
+          <li>配信元の CSP（Content-Security-Policy）で、fetch / XHR / WebSocket / beacon などの送信路を禁止しています（<code>connect-src 'none'</code>）。ブラウザのページ遷移そのものは CSP では止められません。</li>
+          <li>解析は Web Worker で行い、画面が固まりにくいようにしています。</li>
+          <li>一度読み込むと、オフラインでも動きます（Service Worker）。</li>
+          <li>入力は保存しません。再読み込みすると消えます。</li>
+          <li>AI（LLM）は使っていません。すべて決まったルールで判定します（結果が毎回同じになります）。</li>
+          <li>HTML は「ソース」として表示し、ページとしては表示しません。Markdown 内のスクリプト・外部画像も無効化します。</li>
+        </ul>
+
+        <h3>できないこと（正直な制限）</h3>
+        <ul>
+          <li>暗号化されたデータの中身は読めません（種類の推定まで）。</li>
+          <li>ハッシュ値は「元に戻す」ことはできません。長さからの推定のみです。</li>
+          <li>英語の長文を自然に翻訳することはしません。よくあるエラーの意味を辞書で引く方式です。</li>
+          <li>JWT の署名検証、証明書の失効確認は行いません。</li>
+          <li>マスキングは取りこぼしがあります。共有前の目視確認をおすすめします。</li>
+        </ul>
+
+        <h3>注意</h3>
+        <p>
+          この画面は通信しませんが、<strong>貼り付けた先のサービス（チャット・メール・チケット）には内容が残ります</strong>。
+          秘密鍵やパスワードは、そもそも他人に送らないでください。
+        </p>
+        <p class="muted">オープンソース（MIT）。通信先や保存の有無は誰でも確認できます。</p>
+        <p class="muted" id="helpVersion"></p>
+      </div>
+    </div>
+
+    <noscript>
+      <p class="noscript">このツールはブラウザ内で計算するため、JavaScript が必要です。</p>
+    </noscript>
+
+    <script type="module" src="../src/main.ts"></script>
+  
+  </body>
+</html>
