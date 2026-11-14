@@ -21,6 +21,26 @@
 
 [hidden] { display: none !important; }
 
+/* 画像・表・長い文字列が「グリッド項目の最小幅」を押し広げないようにする。
+   min-width: auto のままだと、大きな写真を 1 枚貼っただけでページ全体が
+   横に広がる（iOS Safari / Brave でレイアウトがズレる原因）。 */
+.layout,
+.pane,
+.pane > *,
+.verdict,
+.verdict > *,
+.image-list,
+.image-list > * { min-width: 0; }
+
+img,
+video,
+canvas,
+svg { max-width: 100%; }
+
+/* 長い URL・パス・ハッシュは区切り文字がないため、既定では折り返せずに
+   画面外へはみ出す（続きが読めなくなる）。結果欄では折り返しを許可する。 */
+.pane-result { overflow-wrap: anywhere; }
+
 html, body {
   margin: 0;
   height: 100%;
@@ -201,6 +221,9 @@ body {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -210,6 +233,7 @@ body {
   border-radius: 8px;
   padding: 7px 14px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn:hover { filter: brightness(1.08); }
 
@@ -718,4 +742,26 @@ dl.stats dd.is-warn { color: var(--warn); }
   .pane { padding: 12px 12px 30px; }
   .options { gap: 10px; }
   .btn { padding: 6px 10px; }
+}
+
+/* ---------- モバイル向けの調整 ---------- */
+
+/* ファイル選択の input は「存在するが大きさゼロ」にする。
+   display:none（hidden 属性）だと iOS Safari で label を押しても開かないことがある。 */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* タッチ端末ではドラッグ＆ドロップの案内を出さない（できないため） */
+@media (hover: none) {
+  .drop-hint { display: none; }
 }

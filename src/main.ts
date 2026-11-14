@@ -134,7 +134,14 @@ dropzone.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') fileInput.click();
 });
 
-$('btnFile').addEventListener('click', () => fileInput.click());
+$('btnFile').addEventListener('keydown', (e) => {
+  // <label for="fileInput"> が標準でファイル選択を開く。キーボードでも押せるようにする。
+  const k = (e as KeyboardEvent).key;
+  if (k === 'Enter' || k === ' ') {
+    e.preventDefault();
+    fileInput.click();
+  }
+});
 fileInput.addEventListener('change', () => {
   if (fileInput.files) void addFiles([...fileInput.files]);
   fileInput.value = '';
